@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">PEDRO RTT</string>
+    <string name="pedro_protocol">PEDRO Protocol</string>
+    <string name="back">Back</string>
+    <string name="range_request">Range Request</string>
+    <string name="standby_mode">Standby Mode</string>
+</resources>
