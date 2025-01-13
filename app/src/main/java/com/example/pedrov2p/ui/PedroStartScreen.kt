@@ -25,7 +25,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.pedrov2p.R
-import com.example.pedrov2p.ui.theme.Shapes
 
 @Composable
 fun PedroStartScreen(
@@ -111,10 +110,14 @@ fun PedroStartScreen(
             Button(
                 onClick = { /* TODO Implement logic */ },
             ) {
-                Text(text = stringResource(R.string.standby_mode))
+                Text(text = stringResource(R.string.standby))
             }
         }
     }
+}
+
+private fun getAppPermissions() {
+
 }
 
 @Preview(showBackground = true)
