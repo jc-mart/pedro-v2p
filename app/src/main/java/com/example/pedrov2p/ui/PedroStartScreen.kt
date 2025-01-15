@@ -102,13 +102,13 @@ fun PedroStartScreen(
             modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
         ) {
             Button(
-                onClick = { /* TODO Implement logic */ },
+                onClick = onClickRangeRequest,
             ) {
                 Text(text = stringResource(R.string.range_request))
             }
             Spacer(modifier = Modifier.width(dimensionResource(R.dimen.padding_small)))
             Button(
-                onClick = { /* TODO Implement logic */ },
+                onClick = onClickStandbyMode,
             ) {
                 Text(text = stringResource(R.string.standby))
             }

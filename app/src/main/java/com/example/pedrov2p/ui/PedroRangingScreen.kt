@@ -38,6 +38,7 @@ import androidx.core.content.ContextCompat
 
 @Composable
 fun PedroRangingScreen(
+    onAbortClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // TODO Place WIFI RTT function here and ensure that sufficient permissions have been granted
@@ -95,7 +96,7 @@ fun PedroRangingScreen(
             )
         }
         Button(
-            onClick = { /* TODO Implement logic */ },
+            onClick = onAbortClicked,
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)),
         ) {
             Text(
@@ -169,5 +170,7 @@ private fun performRanging(
 @Preview(showBackground = true)
 @Composable
 fun PedroRangingScreenPreview() {
-    PedroRangingScreen()
+    PedroRangingScreen(
+        onAbortClicked = {}
+    )
 }

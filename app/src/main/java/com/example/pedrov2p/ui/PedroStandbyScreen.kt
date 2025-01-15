@@ -71,7 +71,7 @@ fun PedroStandbyScreen(
             )
         }
         Button(
-            onClick = { /* TODO: Implement this after viewmodel */ },
+            onClick = onClickAbort,
             modifier = Modifier.padding(dimensionResource(R.dimen.padding_medium))
         ) {
             Text(
