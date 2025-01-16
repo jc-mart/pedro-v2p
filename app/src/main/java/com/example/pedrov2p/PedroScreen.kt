@@ -131,6 +131,7 @@ fun PedroApp(
             composable(route = PedroScreen.Ranging.name) {
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
+                    onStartRanging = { viewModel.startRangingMode() },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
                         // TODO snackbar confirming aborting on back button
@@ -144,8 +145,8 @@ fun PedroApp(
                     onClickAbort = {
                         navController.navigate((PedroScreen.Start.name))
                     },
-                    onStartPublishing = { viewModel.startPublishing() },
-                    onStopPublishing = { viewModel.stopPublishing() }
+                    onStartPublishing = { viewModel.startStandbyMode() },
+                    onStopPublishing = { viewModel.stopStandbyMode() }
                 )
             }
             composable(route = PedroScreen.Settings.name) {
