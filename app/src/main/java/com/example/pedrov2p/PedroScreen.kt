@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.rtt.WifiRttManager
+import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -20,10 +21,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +38,7 @@ import com.example.pedrov2p.ui.PedroRangingScreen
 import com.example.pedrov2p.ui.PedroSettingsScreen
 import com.example.pedrov2p.ui.PedroStandbyScreen
 import com.example.pedrov2p.ui.PedroStartScreen
+import com.example.pedrov2p.ui.PedroViewModel
 
 enum class PedroScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -52,7 +58,7 @@ fun PedroAppBar(
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
-        title = { Text(text = "Pedro") },
+        title = { Text(text = currentScreen.name) },
         colors = TopAppBarDefaults.mediumTopAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
@@ -84,6 +90,7 @@ fun PedroAppBar(
 
 @Composable
 fun PedroApp(
+    viewModel: PedroViewModel = viewModel(),
     navController: NavHostController = rememberNavController()
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -101,7 +108,7 @@ fun PedroApp(
             )
         }
     ) { innerPadding ->
-        // TODO Implement ViewModel
+         val uiState by viewModel.uiState.collectAsState()
 
         NavHost(
             navController = navController,
@@ -136,7 +143,9 @@ fun PedroApp(
                 PedroStandbyScreen(
                     onClickAbort = {
                         navController.navigate((PedroScreen.Start.name))
-                    }
+                    },
+                    onStartPublishing = { viewModel.startPublishing() },
+                    onStopPublishing = { viewModel.stopPublishing() }
                 )
             }
             composable(route = PedroScreen.Settings.name) {

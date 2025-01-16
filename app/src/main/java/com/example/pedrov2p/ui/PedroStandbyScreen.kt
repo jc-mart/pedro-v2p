@@ -25,27 +25,20 @@ import com.example.pedrov2p.R
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.wifi.aware.PeerHandle
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun PedroStandbyScreen(
     onClickAbort: () -> Unit,
+    onStartPublishing: () -> Unit,
+    onStopPublishing: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // TODO throw Wi-Fi Aware code in here (Aware supported at this point)
-    val context = LocalContext.current
-    val wifiAwareManager = context.getSystemService(Context.WIFI_AWARE_SERVICE) as WifiAwareManager
 
-    if (!wifiAwareManager.isAvailable) {
-        // TODO Redirect user to home screen with unavailability message
-        Log.e("PEDRO", "wifi aware unavailable")
+    LaunchedEffect(Unit) {
+        onStartPublishing()
     }
-
-    wifiAwareManager.attach(object : AttachCallback() {
-        override fun onAttached(session: WifiAwareSession) {
-            Log.d("PEDRO", "wifi aware session attached successfully")
-            startPublishing(context, session)
-        }
-    }, null)
 
     Column(
         modifier = modifier
@@ -79,39 +72,20 @@ fun PedroStandbyScreen(
             )
         }
     }
-}
 
-private fun startPublishing(context: Context, session: WifiAwareSession) {
-    val config = PublishConfig.Builder()
-        .setServiceName("PEDRO_STANDBY")
-        .build()
-
-    // Check if sufficient permissions are granted
-    if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-        == PackageManager.PERMISSION_GRANTED &&
-        ActivityCompat.checkSelfPermission(context, Manifest.permission.NEARBY_WIFI_DEVICES)
-        == PackageManager.PERMISSION_GRANTED)
-    {
-        session.publish(config, object: DiscoverySessionCallback() {
-            override fun onPublishStarted(session: PublishDiscoverySession) {
-                Log.d("PEDRO", "publishing started")
-            }
-
-            override fun onSessionConfigFailed() {
-                Log.e("PEDRO", "publishing session config failed")
-            }
-
-            override fun onMessageReceived(peerHandle: PeerHandle?, message: ByteArray?) {
-                Log.d("PEDRO", "received message from peer: ${message.toString()}")
-            }
-        }, null)
+    DisposableEffect(Unit) {
+        onDispose {
+            onStopPublishing()
         }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PedroStandbyScreenPreview() {
     PedroStandbyScreen(
-        onClickAbort = {}
+        onClickAbort = {},
+        onStartPublishing = {},
+        onStopPublishing = {}
     )
 }
