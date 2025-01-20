@@ -95,6 +95,8 @@ fun PedroRangingScreen(
     }
 }
 
+// TODO move wifi rtt/aware to here, it's recommendd
+
 @Preview(showBackground = true)
 @Composable
 fun PedroRangingScreenPreview() {
