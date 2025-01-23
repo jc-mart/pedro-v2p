@@ -39,6 +39,7 @@ import com.example.pedrov2p.ui.PedroSettingsScreen
 import com.example.pedrov2p.ui.PedroStandbyScreen
 import com.example.pedrov2p.ui.PedroStartScreen
 import com.example.pedrov2p.ui.PedroViewModel
+import com.example.pedrov2p.ui.components.RttHelper
 
 enum class PedroScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -97,6 +98,7 @@ fun PedroApp(
     val currentScreen = PedroScreen.valueOf(
         backStackEntry?.destination?.route ?: PedroScreen.Start.name
     )
+    var rttClass = RttHelper(LocalContext.current)
 
     Scaffold (
         topBar = {
@@ -131,7 +133,7 @@ fun PedroApp(
             composable(route = PedroScreen.Ranging.name) {
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
-                    onStartRanging = { viewModel.startRangingMode() },
+                    onStartRanging = {  },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
                         // TODO snackbar confirming aborting on back button
@@ -145,8 +147,8 @@ fun PedroApp(
                     onClickAbort = {
                         navController.navigate((PedroScreen.Start.name))
                     },
-                    onStartPublishing = { viewModel.startStandbyMode() },
-                    onStopPublishing = { viewModel.stopStandbyMode() }
+                    onStartPublishing = {  },
+                    onStopPublishing = {  }
                 )
             }
             composable(route = PedroScreen.Settings.name) {

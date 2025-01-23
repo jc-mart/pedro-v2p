@@ -12,7 +12,7 @@
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
       <SelectionState runConfigName="PedroAppPreview">
-        <option name="selectionMode" value="DIALOG" />
+        <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2025-01-20T17:38:04.603024Z">
           <Target type="DEFAULT_BOOT">
             <handle>
