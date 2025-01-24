@@ -1,10 +1,8 @@
 package com.example.pedrov2p.ui.components
 
 import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.net.wifi.ScanResult
 import android.net.wifi.aware.AttachCallback
 import android.net.wifi.aware.DiscoverySessionCallback
 import android.net.wifi.aware.PeerHandle
@@ -24,25 +22,21 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
 
     private val wifiAwareManager = context.getSystemService(Context.WIFI_AWARE_SERVICE) as
             WifiAwareManager
-    private val awareFilter = IntentFilter(WifiAwareManager.ACTION_WIFI_AWARE_STATE_CHANGED)
-    private var awareAvailable: Boolean = false
     /* Register the receiver in the main screen that will contain the context */
-    private val awareReceiver = object : BroadcastReceiver() {
-        override fun onReceive(p0: Context?, p1: Intent?) {
-            awareAvailable = wifiAwareManager.isAvailable
-        }
-    }
-    private var awareConfig = if (!rttMode) {
+
+    protected var awareConfig = if (!rttMode) {
         PublishConfig.Builder()
             .setServiceName(SERVICE_NAME)
+            .setRangingEnabled(true)
             .build()
     } else {
         SubscribeConfig.Builder()
             .setServiceName(SERVICE_NAME)
             .build()
     }
-    protected var discoveredPeer: PeerHandle? = null
-    private var awareSession: WifiAwareSession? = null
+    var awareSession: WifiAwareSession? = null
+        private set
+    private var publishSession: PublishDiscoverySession? = null
 
     // Aware Specific functions
     fun startAwareSession() {
@@ -65,30 +59,30 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
         }, null)
     }
 
-    internal fun stopAwareSession() {
-        Log.d(AWARE_TAG, "Closing Aware session")
+    fun stopAwareSession() {
         awareSession?.close()
+        publishSession?.close()
         awareSession = null
+        publishSession = null
         Log.d(AWARE_TAG, "Closed Aware session")
     }
 
-    @SuppressLint("MissingPermission")
-    protected fun findPeer() {
-        awareSession?.subscribe(awareConfig as SubscribeConfig, object: DiscoverySessionCallback() {
-            // Only need this as the PeerHandle's needed for Wi-Fi RTT
-            override fun onServiceDiscovered(info: ServiceDiscoveryInfo) {
-                Log.d(AWARE_TAG, "Found a PeerHandle")
-                discoveredPeer = info.peerHandle
-            }
-        }, null)
-    }
 
     @SuppressLint("MissingPermission")
-    internal fun startService() {
+    fun startService() {
         awareSession?.publish(awareConfig as PublishConfig, object: DiscoverySessionCallback() {
             override fun onPublishStarted(session: PublishDiscoverySession) {
+                publishSession = session
+                publishSession!!.updatePublish(awareConfig as PublishConfig)
                 Log.d(AWARE_TAG, "Broadcasting service")
             }
+
+            override fun onMessageReceived(peerHandle: PeerHandle?, message: ByteArray?) {
+                Log.d(AWARE_TAG, "Received message: ${java.lang.String(message)}")
+            }
+
+
+
         }, null)
     }
 }

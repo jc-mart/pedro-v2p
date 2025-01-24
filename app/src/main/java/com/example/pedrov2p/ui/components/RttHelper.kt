@@ -6,12 +6,17 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.wifi.aware.DiscoverySessionCallback
 import android.net.wifi.aware.PeerHandle
+import android.net.wifi.aware.ServiceDiscoveryInfo
+import android.net.wifi.aware.SubscribeConfig
+import android.net.wifi.aware.SubscribeDiscoverySession
 import android.net.wifi.rtt.RangingRequest
 import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.RangingResultCallback
 import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
+import kotlinx.coroutines.delay
 
 const val RTT_TAG: String = "RTT_HELPER"
 
@@ -33,6 +38,8 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
     internal var maxIterations: Int = 5 // TODO see about modifying these values after the fact
     internal var distanceThreshold: Int = 0 // In millimeters
     internal var timeThreshold: Int = 0 // TODO Check if ms or us
+    var discoveredPeer: PeerHandle? = null
+    private var subscribeSession: SubscribeDiscoverySession? = null
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
@@ -47,7 +54,13 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
     }
 
     @SuppressLint("MissingPermission")
-    fun startRangingSession() {
+    suspend fun startRangingSession() {
+        buildRttConfig()
+
+        if (discoveredPeer != null) {
+            subscribeSession!!.sendMessage(discoveredPeer as PeerHandle, 123, "test".toByteArray())
+            Log.d(RTT_TAG, "Send a message with peer not being null")
+        }
         repeat(maxIterations) {
             if (!wifiRttManager.isAvailable) {
                 Log.e(RTT_TAG, "RTT unavailable")
@@ -66,6 +79,44 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
                         Log.e(RTT_TAG, "Ranging failed with error code $p0")
                     }
                 })
+
+            delay(1000)
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun startSubscribing() {
+        awareSession?.subscribe(awareConfig as SubscribeConfig, object : DiscoverySessionCallback() {
+            override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
+                subscribeSession = session
+                Log.d(RTT_TAG, "Subscribed to a service")
+                session.sendMessage(discoveredPeer as PeerHandle, 123, "test".toByteArray())
+            }
+        }, null)
+    }
+
+    @SuppressLint("MissingPermission")
+    fun findPeer() {
+        awareSession?.subscribe(awareConfig as SubscribeConfig, object: DiscoverySessionCallback() {
+            // Only need this as the PeerHandle's needed for Wi-Fi RTT
+            override fun onServiceDiscovered(info: ServiceDiscoveryInfo) {
+                Log.d(AWARE_TAG, "Found a PeerHandle")
+                discoveredPeer = info.peerHandle
+            }
+
+            override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
+                subscribeSession = session
+                subscribeSession!!.updateSubscribe(awareConfig as SubscribeConfig)
+                Log.d(RTT_TAG, "Subscribed to a service")
+            }
+
+            override fun onMessageSendFailed(messageId: Int) {
+                Log.d(RTT_TAG, "Failed to send message")
+            }
+
+            override fun onMessageSendSucceeded(messageId: Int) {
+                Log.d(RTT_TAG, "Message $messageId sent")
+            }
+        }, null)
     }
 }

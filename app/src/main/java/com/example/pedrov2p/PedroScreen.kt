@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.rtt.WifiRttManager
+import android.util.Log
 import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,7 +41,10 @@ import com.example.pedrov2p.ui.PedroSettingsScreen
 import com.example.pedrov2p.ui.PedroStandbyScreen
 import com.example.pedrov2p.ui.PedroStartScreen
 import com.example.pedrov2p.ui.PedroViewModel
+import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 enum class PedroScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -98,7 +103,8 @@ fun PedroApp(
     val currentScreen = PedroScreen.valueOf(
         backStackEntry?.destination?.route ?: PedroScreen.Start.name
     )
-    var rttClass = RttHelper(LocalContext.current)
+    val currentContext = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold (
         topBar = {
@@ -131,24 +137,43 @@ fun PedroApp(
                 )
             }
             composable(route = PedroScreen.Ranging.name) {
+                val rttHelper = RttHelper(currentContext)
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
-                    onStartRanging = {  },
+                    onStartRanging = {
+                        coroutineScope.launch {
+                            rttHelper.startAwareSession()
+                            delay(500)
+                            rttHelper.findPeer()
+                            delay(500)
+                            if (rttHelper.discoveredPeer != null)
+                                rttHelper.startRangingSession()
+                        }
+                    },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
                         // TODO snackbar confirming aborting on back button
+                        rttHelper.stopAwareSession()
                         navController.navigate(PedroScreen.Start.name)
                     },
                     modifier = Modifier
                 )
             }
             composable(route = PedroScreen.Standby.name) {
+                val awareHelper = AwareHelper(currentContext)
+
                 PedroStandbyScreen(
                     onClickAbort = {
                         navController.navigate((PedroScreen.Start.name))
                     },
-                    onStartPublishing = {  },
-                    onStopPublishing = {  }
+                    onStartPublishing = {
+                        coroutineScope.launch {
+                            awareHelper.startAwareSession()
+                            delay(500)
+                            awareHelper.startService()
+                        }
+                    },
+                    onStopPublishing = { awareHelper.stopAwareSession() }
                 )
             }
             composable(route = PedroScreen.Settings.name) {
