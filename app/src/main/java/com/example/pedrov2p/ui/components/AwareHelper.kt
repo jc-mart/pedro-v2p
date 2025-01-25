@@ -32,6 +32,8 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
     } else {
         SubscribeConfig.Builder()
             .setServiceName(SERVICE_NAME)
+            .setMinDistanceMm(0)
+            .setMaxDistanceMm(100000)
             .build()
     }
     var awareSession: WifiAwareSession? = null
@@ -81,7 +83,9 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
                 Log.d(AWARE_TAG, "Received message: ${java.lang.String(message)}")
             }
 
-
+            override fun onServiceDiscovered(info: ServiceDiscoveryInfo) {
+                Log.d(AWARE_TAG, "Service discovered")
+            }
 
         }, null)
     }

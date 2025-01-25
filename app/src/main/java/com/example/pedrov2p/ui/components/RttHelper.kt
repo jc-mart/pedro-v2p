@@ -11,6 +11,7 @@ import android.net.wifi.aware.PeerHandle
 import android.net.wifi.aware.ServiceDiscoveryInfo
 import android.net.wifi.aware.SubscribeConfig
 import android.net.wifi.aware.SubscribeDiscoverySession
+import android.net.wifi.aware.WifiAwareSession
 import android.net.wifi.rtt.RangingRequest
 import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.RangingResultCallback
@@ -54,13 +55,14 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
     }
 
     @SuppressLint("MissingPermission")
-    suspend fun startRangingSession() {
+    fun startRangingSession() {
         buildRttConfig()
 
         if (discoveredPeer != null) {
             subscribeSession!!.sendMessage(discoveredPeer as PeerHandle, 123, "test".toByteArray())
             Log.d(RTT_TAG, "Send a message with peer not being null")
         }
+
         repeat(maxIterations) {
             if (!wifiRttManager.isAvailable) {
                 Log.e(RTT_TAG, "RTT unavailable")
@@ -80,7 +82,7 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
                     }
                 })
 
-            delay(1000)
+            // delay(1000)
         }
     }
 
@@ -102,6 +104,15 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
             override fun onServiceDiscovered(info: ServiceDiscoveryInfo) {
                 Log.d(AWARE_TAG, "Found a PeerHandle")
                 discoveredPeer = info.peerHandle
+            }
+
+            override fun onServiceDiscoveredWithinRange(
+                info: ServiceDiscoveryInfo,
+                distanceMm: Int
+            ) {
+                Log.d(RTT_TAG, "Found a device ${distanceMm / 1000.0}m away.")
+                discoveredPeer = info.peerHandle
+                startRangingSession()
             }
 
             override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
