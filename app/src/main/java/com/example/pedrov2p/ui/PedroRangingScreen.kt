@@ -34,6 +34,7 @@ import android.net.wifi.rtt.RangingRequest
 import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.RangingResultCallback
 import android.net.wifi.rtt.ResponderConfig
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 
@@ -41,6 +42,7 @@ import androidx.core.content.ContextCompat
 fun PedroRangingScreen(
     onAbortClicked: () -> Unit,
     onStartRanging: () -> Unit,
+    onStopRanging: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     // TODO Place WIFI RTT function here and ensure that sufficient permissions have been granted
@@ -93,15 +95,18 @@ fun PedroRangingScreen(
             )
         }
     }
-}
 
-// TODO move wifi rtt/aware to here, it's recommendd
+    DisposableEffect(Unit) {
+        onDispose { onStopRanging() }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable
 fun PedroRangingScreenPreview() {
     PedroRangingScreen(
         onStartRanging = {},
-        onAbortClicked = {}
+        onAbortClicked = {},
+        onStopRanging = {}
     )
 }

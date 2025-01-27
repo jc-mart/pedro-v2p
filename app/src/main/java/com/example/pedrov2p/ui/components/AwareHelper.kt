@@ -2,23 +2,27 @@ package com.example.pedrov2p.ui.components
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.net.wifi.ScanResult
 import android.net.wifi.aware.AttachCallback
 import android.net.wifi.aware.DiscoverySessionCallback
-import android.net.wifi.aware.PeerHandle
 import android.net.wifi.aware.PublishConfig
 import android.net.wifi.aware.PublishDiscoverySession
-import android.net.wifi.aware.ServiceDiscoveryInfo
 import android.net.wifi.aware.SubscribeConfig
 import android.net.wifi.aware.WifiAwareManager
 import android.net.wifi.aware.WifiAwareSession
 import android.util.Log
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 const val AWARE_TAG: String = "AWARE_HELPER"
 const val SERVICE_NAME: String = "PEDRO_STANDBY"
 
 open class AwareHelper(context: Context, rttMode: Boolean = false) {
     protected var currentContext = context
+    protected var job: Job? = null
+    protected val coroutineScope = CoroutineScope(Dispatchers.Main)
 
     private val wifiAwareManager = context.getSystemService(Context.WIFI_AWARE_SERVICE) as
             WifiAwareManager
@@ -33,12 +37,12 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
         SubscribeConfig.Builder()
             .setServiceName(SERVICE_NAME)
             .setMinDistanceMm(0)
-            .setMaxDistanceMm(100000)
             .build()
     }
     var awareSession: WifiAwareSession? = null
         private set
-    private var publishSession: PublishDiscoverySession? = null
+    var publishSession: PublishDiscoverySession? = null
+        private set
 
     // Aware Specific functions
     fun startAwareSession() {
@@ -61,9 +65,12 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
         }, null)
     }
 
-    fun stopAwareSession() {
+    open fun stopAwareSession() {
+        job?.cancel()
+        job = null
+
         awareSession?.close()
-        publishSession?.close()
+        // publishSession?.close()
         awareSession = null
         publishSession = null
         Log.d(AWARE_TAG, "Closed Aware session")
@@ -72,21 +79,21 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
 
     @SuppressLint("MissingPermission")
     fun startService() {
-        awareSession?.publish(awareConfig as PublishConfig, object: DiscoverySessionCallback() {
-            override fun onPublishStarted(session: PublishDiscoverySession) {
-                publishSession = session
-                publishSession!!.updatePublish(awareConfig as PublishConfig)
-                Log.d(AWARE_TAG, "Broadcasting service")
-            }
 
-            override fun onMessageReceived(peerHandle: PeerHandle?, message: ByteArray?) {
-                Log.d(AWARE_TAG, "Received message: ${java.lang.String(message)}")
-            }
+        job = coroutineScope.launch {
+            delay(500)
 
-            override fun onServiceDiscovered(info: ServiceDiscoveryInfo) {
-                Log.d(AWARE_TAG, "Service discovered")
-            }
-
-        }, null)
+            awareSession?.publish(
+                awareConfig as PublishConfig,
+                object : DiscoverySessionCallback() {
+                    override fun onPublishStarted(session: PublishDiscoverySession) {
+                        publishSession = session
+                        publishSession!!.updatePublish(awareConfig as PublishConfig)
+                        Log.d(AWARE_TAG, "Broadcasting service")
+                    }
+                },
+                null
+            )
+        }
     }
 }

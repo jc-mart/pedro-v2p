@@ -145,17 +145,17 @@ fun PedroApp(
                             rttHelper.startAwareSession()
                             delay(500)
                             rttHelper.findPeer()
-                            delay(500)
-                            if (rttHelper.discoveredPeer != null)
-                                rttHelper.startRangingSession()
+                            delay(1000)
+                            rttHelper.startRangingSession()
                         }
                     },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
                         // TODO snackbar confirming aborting on back button
-                        rttHelper.stopAwareSession()
+                        rttHelper.stopRanging()
                         navController.navigate(PedroScreen.Start.name)
                     },
+                    onStopRanging = {rttHelper.stopRanging()},
                     modifier = Modifier
                 )
             }
@@ -164,14 +164,14 @@ fun PedroApp(
 
                 PedroStandbyScreen(
                     onClickAbort = {
+                        awareHelper.stopAwareSession()
                         navController.navigate((PedroScreen.Start.name))
                     },
                     onStartPublishing = {
-                        coroutineScope.launch {
                             awareHelper.startAwareSession()
-                            delay(500)
                             awareHelper.startService()
-                        }
+
+                        // awareHelper.startService()
                     },
                     onStopPublishing = { awareHelper.stopAwareSession() }
                 )

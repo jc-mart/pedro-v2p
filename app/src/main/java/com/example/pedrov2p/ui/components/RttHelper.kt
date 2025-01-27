@@ -18,6 +18,7 @@ import android.net.wifi.rtt.RangingResultCallback
 import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 const val RTT_TAG: String = "RTT_HELPER"
 
@@ -39,8 +40,9 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
     internal var maxIterations: Int = 5 // TODO see about modifying these values after the fact
     internal var distanceThreshold: Int = 0 // In millimeters
     internal var timeThreshold: Int = 0 // TODO Check if ms or us
+    private var terminated = true
     var discoveredPeer: PeerHandle? = null
-    private var subscribeSession: SubscribeDiscoverySession? = null
+    protected var subscribeSession: SubscribeDiscoverySession? = null
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
@@ -58,53 +60,40 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
     fun startRangingSession() {
         buildRttConfig()
 
-        if (discoveredPeer != null) {
-            subscribeSession!!.sendMessage(discoveredPeer as PeerHandle, 123, "test".toByteArray())
-            Log.d(RTT_TAG, "Send a message with peer not being null")
-        }
+        job = coroutineScope.launch {
 
-        repeat(maxIterations) {
-            if (!wifiRttManager.isAvailable) {
-                Log.e(RTT_TAG, "RTT unavailable")
-                TODO("Error out gracefully")
+            repeat(maxIterations) {
+                if (!wifiRttManager.isAvailable) {
+                    Log.e(RTT_TAG, "RTT unavailable")
+                    TODO("Error out gracefully")
+                }
+
+                if (!terminated) {
+
+                    wifiRttManager.startRanging(
+                        rttConfig as RangingRequest,
+                        currentContext.mainExecutor,
+                        object : RangingResultCallback() {
+                            override fun onRangingResults(p0: MutableList<RangingResult>) {
+                                Log.d(RTT_TAG, "Ranging results: ${p0[0]}")
+                            }
+
+                            override fun onRangingFailure(p0: Int) {
+                                Log.e(RTT_TAG, "Ranging failed with error code $p0")
+                            }
+                        })
+                }
+
+                // delay(1000)
             }
-
-            wifiRttManager.startRanging(
-                rttConfig as RangingRequest,
-                currentContext.mainExecutor,
-                object : RangingResultCallback() {
-                    override fun onRangingResults(p0: MutableList<RangingResult>) {
-                        Log.d(RTT_TAG, "Ranging results: ${p0[0]}")
-                    }
-
-                    override fun onRangingFailure(p0: Int) {
-                        Log.e(RTT_TAG, "Ranging failed with error code $p0")
-                    }
-                })
-
-            // delay(1000)
         }
     }
 
-    @SuppressLint("MissingPermission")
-    fun startSubscribing() {
-        awareSession?.subscribe(awareConfig as SubscribeConfig, object : DiscoverySessionCallback() {
-            override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
-                subscribeSession = session
-                Log.d(RTT_TAG, "Subscribed to a service")
-                session.sendMessage(discoveredPeer as PeerHandle, 123, "test".toByteArray())
-            }
-        }, null)
-    }
 
     @SuppressLint("MissingPermission")
     fun findPeer() {
         awareSession?.subscribe(awareConfig as SubscribeConfig, object: DiscoverySessionCallback() {
             // Only need this as the PeerHandle's needed for Wi-Fi RTT
-            override fun onServiceDiscovered(info: ServiceDiscoveryInfo) {
-                Log.d(AWARE_TAG, "Found a PeerHandle")
-                discoveredPeer = info.peerHandle
-            }
 
             override fun onServiceDiscoveredWithinRange(
                 info: ServiceDiscoveryInfo,
@@ -112,7 +101,7 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
             ) {
                 Log.d(RTT_TAG, "Found a device ${distanceMm / 1000.0}m away.")
                 discoveredPeer = info.peerHandle
-                startRangingSession()
+                terminated = false
             }
 
             override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
@@ -121,13 +110,17 @@ class RttHelper(context: Context): AwareHelper(context = context, rttMode = true
                 Log.d(RTT_TAG, "Subscribed to a service")
             }
 
-            override fun onMessageSendFailed(messageId: Int) {
-                Log.d(RTT_TAG, "Failed to send message")
+            override fun onSessionTerminated() {
+                terminated = true
             }
 
-            override fun onMessageSendSucceeded(messageId: Int) {
-                Log.d(RTT_TAG, "Message $messageId sent")
-            }
         }, null)
+    }
+
+    fun stopRanging() {
+        stopAwareSession()
+        // subscribeSession?.close()
+        discoveredPeer = null
+        Log.d(RTT_TAG, "Subscription session closed, discoveredPeer reset")
     }
 }
