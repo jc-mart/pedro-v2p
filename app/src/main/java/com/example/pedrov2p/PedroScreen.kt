@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
 import androidx.annotation.MainThread
@@ -138,15 +139,20 @@ fun PedroApp(
             }
             composable(route = PedroScreen.Ranging.name) {
                 val rttHelper = RttHelper(currentContext)
+                var results: MutableList<RangingResult>
+
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
                     onStartRanging = {
                         coroutineScope.launch {
                             rttHelper.startAwareSession()
-                            delay(500)
+                            delay(500) // TODO there's gotta be a better way to wait
                             rttHelper.findPeer()
-                            delay(1000)
-                            rttHelper.startRangingSession()
+                            delay(500)
+                            results = rttHelper.startRangingSession()
+                            delay(5000)
+                            Log.d("SCREEN", "Captured results: ${results.toString()}")
+                            // TODO update viewmodel after getting good results
                         }
                     },
                     onAbortClicked = {

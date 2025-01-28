@@ -28,7 +28,7 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
             WifiAwareManager
     /* Register the receiver in the main screen that will contain the context */
 
-    protected var awareConfig = if (!rttMode) {
+    protected var awareConfig: Any = if (!rttMode) {
         PublishConfig.Builder()
             .setServiceName(SERVICE_NAME)
             .setRangingEnabled(true)
@@ -79,7 +79,6 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
 
     @SuppressLint("MissingPermission")
     fun startService() {
-
         job = coroutineScope.launch {
             delay(500)
 
