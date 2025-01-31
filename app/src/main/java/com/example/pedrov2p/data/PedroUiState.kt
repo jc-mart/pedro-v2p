@@ -14,8 +14,8 @@ data class PedroUiState(
     val distance: Array<Int> = Array(maxIterations) { -1 },
     val distanceStdDev:Array<Int> = Array(maxIterations) { -1 },
     val rssi: Array<Int> = Array(maxIterations) { -1 },
-    val is80211azNtbMeasurement: Array<Int> = Array(maxIterations) { -1 },
-    val is80211mcMeasurement: Array<Int> = Array(maxIterations) { -1 },
+    val is80211azNtbMeasurement: Boolean = false,
+    val is80211mcMeasurement: Boolean = false,
     val attemptedMeasurements: Array<Int> = Array(maxIterations) { -1 },
     val successfulMeasurements: Array<Int?> = Array(maxIterations) { -1 },
 )

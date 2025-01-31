@@ -1,18 +1,12 @@
 package com.example.pedrov2p
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+
 import android.net.wifi.rtt.RangingResult
-import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
-import androidx.annotation.MainThread
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,14 +17,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -44,7 +36,6 @@ import com.example.pedrov2p.ui.PedroStartScreen
 import com.example.pedrov2p.ui.PedroViewModel
 import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 enum class PedroScreen(@StringRes val title: Int) {
@@ -146,11 +137,11 @@ fun PedroApp(
                     onStartRanging = {
                         coroutineScope.launch {
                             rttHelper.startAwareSession()
-                            delay(500) // TODO there's gotta be a better way to wait
+                            // delay(500) // TODO there's gotta be a better way to wait
                             rttHelper.findPeer()
-                            delay(500)
+                            // delay(500)
                             results = rttHelper.startRangingSession()
-                            delay(5000)
+                            // delay(5000)
                             Log.d("SCREEN", "Captured results: ${results.toString()}")
                             // TODO update viewmodel after getting good results
                         }
@@ -174,9 +165,10 @@ fun PedroApp(
                         navController.navigate((PedroScreen.Start.name))
                     },
                     onStartPublishing = {
-                            awareHelper.startAwareSession()
-                            awareHelper.startService()
-
+                            coroutineScope.launch {
+                                awareHelper.startAwareSession()
+                                awareHelper.startService()
+                            }
                         // awareHelper.startService()
                     },
                     onStopPublishing = { awareHelper.stopAwareSession() }

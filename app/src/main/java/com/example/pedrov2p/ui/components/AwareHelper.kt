@@ -15,6 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 const val AWARE_TAG: String = "AWARE_HELPER"
 const val SERVICE_NAME: String = "PEDRO_STANDBY"
@@ -45,22 +48,23 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
         private set
 
     // Aware Specific functions
-    fun startAwareSession() {
+    suspend fun startAwareSession(): Boolean = suspendCoroutine { continuation ->
 
         if (!wifiAwareManager.isAvailable) {
             Log.e(AWARE_TAG, "Aware unavailable")
-            TODO("Deal with this")
+            // TODO("Deal with this")
         }
 
         wifiAwareManager.attach(object : AttachCallback() {
             override fun onAttached(session: WifiAwareSession?) {
                 Log.d(AWARE_TAG, "Attached to a session")
                 awareSession = session // TODO Close session to prevent leaks
+                continuation.resume(true)
             }
 
             override fun onAttachFailed() {
                 Log.e(AWARE_TAG, "Attaching failed")
-                TODO("Deal with this")
+                continuation.resumeWithException(RuntimeException("Failed to attach to a session"))
             }
         }, null)
     }

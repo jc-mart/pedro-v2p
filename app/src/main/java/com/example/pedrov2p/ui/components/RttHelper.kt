@@ -14,6 +14,8 @@ import android.net.wifi.rtt.RangingResultCallback
 import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
 import kotlinx.coroutines.launch
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 const val RTT_TAG: String = "RTT_HELPER"
 
@@ -41,7 +43,7 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     }
 
     @SuppressLint("MissingPermission")
-    fun startRangingSession(): MutableList<RangingResult> {
+    suspend fun startRangingSession(): MutableList<RangingResult> = suspendCoroutine { continuation ->
         buildRttConfig()
         val rangingResults = mutableListOf<RangingResult>()
 
@@ -59,6 +61,8 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                         object : RangingResultCallback() {
                             override fun onRangingResults(p0: MutableList<RangingResult>) {
                                 rangingResults.add(p0[0])
+                                if (rangingResults.size >= maxIterations)
+                                    continuation.resume(rangingResults)
                                 Log.d(RTT_TAG, "Ranging results: ${p0[0]}")
                             }
 
@@ -70,11 +74,10 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                 }
             }
         }
-        return rangingResults
     }
 
     @SuppressLint("MissingPermission")
-    fun findPeer() {
+    suspend fun findPeer(): Boolean = suspendCoroutine { continuation ->
         awareSession?.subscribe(
             awareConfig as SubscribeConfig,
             object : DiscoverySessionCallback() {
@@ -85,6 +88,7 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                     Log.d(RTT_TAG, "Found a device ${distanceMm / 1000.0}m away.")
                     discoveredPeer = info.peerHandle
                     terminated = false
+                    continuation.resume(true)
                 }
 
                 override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
