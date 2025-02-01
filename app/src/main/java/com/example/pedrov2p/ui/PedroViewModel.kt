@@ -1,41 +1,13 @@
 package com.example.pedrov2p.ui
 
-import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Application
-import android.content.Context
-import android.content.pm.PackageManager
-import android.net.wifi.aware.AttachCallback
-import android.net.wifi.aware.DiscoverySessionCallback
-import android.net.wifi.aware.PeerHandle
-import android.net.wifi.aware.PublishConfig
-import android.net.wifi.aware.PublishDiscoverySession
-import android.net.wifi.aware.SubscribeConfig
-import android.net.wifi.aware.SubscribeDiscoverySession
-import android.net.wifi.aware.WifiAwareManager
-import android.net.wifi.aware.WifiAwareSession
-import android.net.wifi.rtt.RangingRequest
 import android.net.wifi.rtt.RangingResult
-import android.net.wifi.rtt.RangingResultCallback
-import android.net.wifi.rtt.WifiRttManager
-import android.util.Log
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import com.example.pedrov2p.data.PedroUiState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
-import java.lang.IllegalStateException
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.math.log
+
 
 class PedroViewModel(application: Application): AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(PedroUiState())
@@ -49,9 +21,35 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(
             distance = results.map { it.distanceMm }.toTypedArray(),
             distanceStdDev = results.map { it.distanceStdDevMm }.toTypedArray(),
+            timestamps = results.map { it.rangingTimestampMillis }.toTypedArray(),
             rssi = results.map { it.rssi }.toTypedArray(),
-
+            is80211azNtbMeasurement = results[0].is80211azNtbMeasurement,
+            is80211mcMeasurement = results[0].is80211mcMeasurement,
+            pedroVerified = false // TODO update this based on verify run function
         )
+    }
+
+    /**
+     * TODO make sure to take timestamps of when the rtt request is done
+     *
+     * Iterate through all range results to find if something meets both
+     * the time and distance threshold
+     *
+     * begin with i = 1
+     * and j starts at i to avoid repeating sequences
+     */
+    fun verifyRun(): Boolean {
+        var verified = false
+
+        for (i in 0..uiState.value.maxIterations) {
+            var j = i + 1
+
+            for (j in i..uiState.value.maxIterations) {
+                if ()
+            }
+        }
+
+        return verified
     }
 
     fun resetForRerun() {
