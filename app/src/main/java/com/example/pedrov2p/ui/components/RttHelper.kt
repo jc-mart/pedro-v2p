@@ -3,6 +3,7 @@ package com.example.pedrov2p.ui.components
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Location
 import android.net.wifi.aware.DiscoverySessionCallback
 import android.net.wifi.aware.PeerHandle
 import android.net.wifi.aware.ServiceDiscoveryInfo
@@ -25,6 +26,7 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     private val wifiRttManager = context.getSystemService(Context.WIFI_RTT_RANGING_SERVICE) as
             WifiRttManager
     private var rttConfig: RangingRequest? = null // Will get updated once PeerHandle is found
+    private var locationHelper: LocationHelper = LocationHelper(context)
     private var maxIterations: Int = iterations
     private var terminated = true
     var discoveredPeer: PeerHandle? = null
@@ -45,7 +47,9 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     @SuppressLint("MissingPermission")
     suspend fun startRangingSession(): MutableList<RangingResult> = suspendCoroutine { continuation ->
         buildRttConfig()
+        locationHelper.getLastLocation()
         val rangingResults = mutableListOf<RangingResult>()
+        var location: Location? = null
 
         job = coroutineScope.launch {
             repeat(maxIterations) {
@@ -61,9 +65,12 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                         object : RangingResultCallback() {
                             override fun onRangingResults(p0: MutableList<RangingResult>) {
                                 rangingResults.add(p0[0])
+                                location = locationHelper.lastLocation
                                 if (rangingResults.size >= maxIterations)
                                     continuation.resume(rangingResults)
                                 Log.d(RTT_TAG, "Ranging results: ${p0[0]}")
+                                Log.d(RTT_TAG, "Location coordinates: ${location?.latitude}," +
+                                        " ${location?.longitude}")
                             }
 
                             override fun onRangingFailure(p0: Int) {

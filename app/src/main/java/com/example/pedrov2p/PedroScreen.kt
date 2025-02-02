@@ -137,11 +137,9 @@ fun PedroApp(
                     onStartRanging = {
                         coroutineScope.launch {
                             rttHelper.startAwareSession()
-                            // delay(500) // TODO there's gotta be a better way to wait
                             rttHelper.findPeer()
-                            // delay(500)
                             results = rttHelper.startRangingSession()
-                            // delay(5000)
+
                             Log.d("SCREEN", "Captured results: ${results.toString()}")
                             // TODO update viewmodel after getting good results
                         }

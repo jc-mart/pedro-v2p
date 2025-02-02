@@ -45,7 +45,8 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
             var j = i + 1
 
             for (j in i..uiState.value.maxIterations) {
-                if ()
+                if (true)
+                    TODO()
             }
         }
 
