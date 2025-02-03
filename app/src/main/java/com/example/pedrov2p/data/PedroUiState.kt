@@ -10,15 +10,28 @@ data class PedroUiState(
     val distanceThreshold: Int = 2 * 1000,
     val maxIterations: Int = 5,
     val enableLogging: Boolean = true,
-    // Values retrieved from Wi-Fi RTT
-    val distance: Array<Int> = Array(maxIterations) { -1 },
-    val distanceStdDev:Array<Int> = Array(maxIterations) { -1 },
-    val rssi: Array<Int> = Array(maxIterations) { -1 },
+    /**
+     * Values retrieved from Wi-Fi RTT
+     *
+     * Arrays will be for verifying PEDRO
+     * Ints will be for updating screen
+     */
+    val distanceArray: Array<Int> = Array(maxIterations) { -1 },
+    val distance: Int = -1,
+    val distanceStdDevArray:Array<Int> = Array(maxIterations) { -1 },
+    val distanceStdDev: Int = -1,
+    val rssiArray: Array<Int> = Array(maxIterations) { -1 },
+    val rssi: Int = -1,
     val is80211azNtbMeasurement: Boolean = false,
     val is80211mcMeasurement: Boolean = false,
-    val attemptedMeasurements: Array<Int> = Array(maxIterations) { -1 },
-    val successfulMeasurements: Array<Int?> = Array(maxIterations) { -1 },
-    val timestamps: Array<Long?> = Array(maxIterations) { -1 }
+    val attemptedMeasurementsArray: Array<Int> = Array(maxIterations) { -1 },
+    val attemptedMeasurements: Int = -1,
+    val successfulMeasurementsArray: Array<Int?> = Array(maxIterations) { -1 },
+    val successfulMeasurements: Int = -1,
+    val timestampArray: Array<Long?> = Array(maxIterations) { -1 },
+    val timestamp: Long = -1,
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -31,14 +44,13 @@ data class PedroUiState(
         if (distanceThreshold != other.distanceThreshold) return false
         if (maxIterations != other.maxIterations) return false
         if (enableLogging != other.enableLogging) return false
-        if (!distance.contentEquals(other.distance)) return false
-        if (!distanceStdDev.contentEquals(other.distanceStdDev)) return false
-        if (!rssi.contentEquals(other.rssi)) return false
+        if (!distanceArray.contentEquals(other.distanceArray)) return false
+        if (!distanceStdDevArray.contentEquals(other.distanceStdDevArray)) return false
+        if (!rssiArray.contentEquals(other.rssiArray)) return false
         if (is80211azNtbMeasurement != other.is80211azNtbMeasurement) return false
         if (is80211mcMeasurement != other.is80211mcMeasurement) return false
-        if (!attemptedMeasurements.contentEquals(other.attemptedMeasurements)) return false
-        if (!successfulMeasurements.contentEquals(other.successfulMeasurements)) return false
-        if (!timestamps.contentEquals(other.timestamps)) return false
+        if (!attemptedMeasurementsArray.contentEquals(other.attemptedMeasurementsArray)) return false
+        if (!successfulMeasurementsArray.contentEquals(other.successfulMeasurementsArray)) return false
 
         return true
     }
@@ -49,14 +61,13 @@ data class PedroUiState(
         result = 31 * result + distanceThreshold
         result = 31 * result + maxIterations
         result = 31 * result + enableLogging.hashCode()
-        result = 31 * result + distance.contentHashCode()
-        result = 31 * result + distanceStdDev.contentHashCode()
-        result = 31 * result + rssi.contentHashCode()
+        result = 31 * result + distanceArray.contentHashCode()
+        result = 31 * result + distanceStdDevArray.contentHashCode()
+        result = 31 * result + rssiArray.contentHashCode()
         result = 31 * result + is80211azNtbMeasurement.hashCode()
         result = 31 * result + is80211mcMeasurement.hashCode()
-        result = 31 * result + attemptedMeasurements.contentHashCode()
-        result = 31 * result + successfulMeasurements.contentHashCode()
-        result = 31 * result + timestamps.contentHashCode()
+        result = 31 * result + attemptedMeasurementsArray.contentHashCode()
+        result = 31 * result + successfulMeasurementsArray.contentHashCode()
         return result
     }
 }

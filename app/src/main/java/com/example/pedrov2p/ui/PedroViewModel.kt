@@ -1,9 +1,11 @@
 package com.example.pedrov2p.ui
 
 import android.app.Application
+import android.location.Location
 import android.net.wifi.rtt.RangingResult
 import androidx.lifecycle.AndroidViewModel
 import com.example.pedrov2p.data.PedroUiState
+import com.example.pedrov2p.ui.components.RTTResults
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,14 +19,14 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
      * TODO Update DataStore structure with received values from wifi rtt
      */
 
-    fun updateRun(results: MutableList<RangingResult>) {
+    fun updateRun(results: MutableList<Pair<RangingResult, Location>>) {
         _uiState.value = _uiState.value.copy(
-            distance = results.map { it.distanceMm }.toTypedArray(),
-            distanceStdDev = results.map { it.distanceStdDevMm }.toTypedArray(),
-            timestamps = results.map { it.rangingTimestampMillis }.toTypedArray(),
-            rssi = results.map { it.rssi }.toTypedArray(),
-            is80211azNtbMeasurement = results[0].is80211azNtbMeasurement,
-            is80211mcMeasurement = results[0].is80211mcMeasurement,
+            distanceArray = results.map { it.first.distanceMm }.toTypedArray(),
+            distanceStdDevArray = results.map { it.first.distanceStdDevMm }.toTypedArray(),
+            rssiArray = results.map { it.first.rssi }.toTypedArray(),
+            timestampArray = results.map { it.first.rangingTimestampMillis }.toTypedArray(),
+            is80211azNtbMeasurement = results[0].first.is80211azNtbMeasurement,
+            is80211mcMeasurement = results[0].first.is80211mcMeasurement,
             pedroVerified = false // TODO update this based on verify run function
         )
     }
@@ -53,15 +55,37 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         return verified
     }
 
+    fun updateIntermediateResult(result: Pair<RangingResult, Location>) {
+        _uiState.value = _uiState.value.copy(
+            distance = result.first.distanceMm,
+            distanceStdDev = result.first.distanceStdDevMm,
+            rssi = result.first.rssi,
+            successfulMeasurements = result.first.numSuccessfulMeasurements,
+            attemptedMeasurements = result.first.numAttemptedMeasurements,
+
+        )
+    }
+
+    fun updateFinalizedResults(finalResults: MutableList<Pair<RangingResult, Location>>) {
+        TODO("Average out the values? and give a scrollable list of total passes")
+    }
+
     fun resetForRerun() {
         _uiState.value = _uiState.value.copy(
-            distance = Array(_uiState.value.maxIterations) {-1},
-            distanceStdDev = Array(_uiState.value.maxIterations) {-1},
-            rssi = Array(_uiState.value.maxIterations) {-1},
+            distanceArray = Array(_uiState.value.maxIterations) {-1},
+            distance = -1,
+            distanceStdDevArray = Array(_uiState.value.maxIterations) {-1},
+            distanceStdDev = -1,
+            rssiArray = Array(_uiState.value.maxIterations) {-1},
+            rssi = -1,
             is80211azNtbMeasurement = false,
             is80211mcMeasurement = false,
-            attemptedMeasurements = Array(_uiState.value.maxIterations) {-1},
-            successfulMeasurements = Array(_uiState.value.maxIterations) {-1},
+            attemptedMeasurementsArray = Array(_uiState.value.maxIterations) {-1},
+            attemptedMeasurements = -1,
+            successfulMeasurementsArray = Array(_uiState.value.maxIterations) {-1},
+            successfulMeasurements = -1,
+            timestampArray = Array(_uiState.value.maxIterations) { -1 },
+            timestamp = -1,
             pedroVerified = false,
         )
     }

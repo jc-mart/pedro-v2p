@@ -16,6 +16,7 @@ import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.BlockingQueue
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -29,9 +30,16 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     private var rttConfig: RangingRequest? = null // Will get updated once PeerHandle is found
     private var locationHelper: LocationHelper = LocationHelper(context)
     private var maxIterations: Int = iterations
-    private var terminated = true
+    var terminated = true
+        private set
     var discoveredPeer: PeerHandle? = null
-    protected var subscribeSession: SubscribeDiscoverySession? = null
+
+    /**
+     * Ideally, this will allow for us to display intermediate values on the screen
+     */
+    lateinit var intermediateResults: BlockingQueue<Pair<RangingResult, Location>>
+        private set
+
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
@@ -76,7 +84,9 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                              * a ranging request with one other device. Increases with more devices
                              */
                             override fun onRangingResults(p0: MutableList<RangingResult>) {
-                                rangingResults.add(Pair(p0[0], locationHelper.location!!))
+                                val combinedResults = Pair(p0[0], locationHelper.location!!)
+                                rangingResults.add(combinedResults)
+                                intermediateResults.put(combinedResults)
 
                                 if (rangingResults.size >= maxIterations) {
                                     locationHelper.stopLocationUpdates()
@@ -98,6 +108,27 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                 }
             }
         }
+    }
+
+    @SuppressLint("DefaultLocale")
+    private fun statsToString(combined: Pair<RangingResult, Location>): List<Any> {
+        val distance = combined.first.distanceMm / 1000.0
+        val distanceStdDev = combined.first.distanceStdDevMm / 1000.0
+        val rssi = combined.first.rssi.toFloat()
+        val totalAttempts = "${combined.first.numAttemptedMeasurements}"
+        val successfulAttempts = "${combined.first.numSuccessfulMeasurements}"
+        val latitude = "${combined.second.latitude}"
+        val longitude = "${combined.second.longitude}"
+
+        return listOf(
+            distance,
+            distanceStdDev,
+            rssi,
+            successfulAttempts,
+            totalAttempts,
+            latitude,
+            longitude
+        )
     }
 
     @SuppressLint("MissingPermission")

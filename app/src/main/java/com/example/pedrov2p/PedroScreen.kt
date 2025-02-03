@@ -37,7 +37,9 @@ import com.example.pedrov2p.ui.PedroStartScreen
 import com.example.pedrov2p.ui.PedroViewModel
 import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.TimeUnit
 
 enum class PedroScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -136,12 +138,27 @@ fun PedroApp(
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
                     onStartRanging = {
+
                         coroutineScope.launch {
                             rttHelper.startAwareSession()
                             rttHelper.findPeer()
                             results = rttHelper.startRangingSession()
+                        }
 
-                            // TODO update viewmodel after getting good results
+                        coroutineScope.launch {
+                            // TODO this coroutine will handle updating the screen
+                            while (!rttHelper.terminated)
+                                delay(100)
+
+                            while (rttHelper.terminated) {
+                                var formattedRangeResult = rttHelper.intermediateResults.poll(
+                                    100,
+                                    TimeUnit.MILLISECONDS
+                                )
+
+                                if (formattedRangeResult != null)
+                                    TODO("Update UI here")
+                            }
                         }
                     },
                     onAbortClicked = {
