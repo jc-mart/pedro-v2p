@@ -1,6 +1,7 @@
 package com.example.pedrov2p
 
 
+import android.location.Location
 import android.net.wifi.rtt.RangingResult
 import android.util.Log
 import androidx.annotation.StringRes
@@ -129,8 +130,8 @@ fun PedroApp(
                 )
             }
             composable(route = PedroScreen.Ranging.name) {
-                val rttHelper = RttHelper(currentContext)
-                var results: MutableList<RangingResult>
+                val rttHelper = RttHelper(currentContext, iterations = 20)
+                var results: MutableList<Pair<RangingResult, Location>>
 
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
@@ -140,7 +141,6 @@ fun PedroApp(
                             rttHelper.findPeer()
                             results = rttHelper.startRangingSession()
 
-                            Log.d("SCREEN", "Captured results: ${results.toString()}")
                             // TODO update viewmodel after getting good results
                         }
                     },

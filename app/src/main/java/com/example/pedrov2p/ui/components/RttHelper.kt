@@ -14,6 +14,7 @@ import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.RangingResultCallback
 import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -45,13 +46,19 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     }
 
     @SuppressLint("MissingPermission")
-    suspend fun startRangingSession(): MutableList<RangingResult> = suspendCoroutine { continuation ->
+    suspend fun startRangingSession(): MutableList<Pair<RangingResult, Location>> = suspendCoroutine {
+        continuation ->
+
         buildRttConfig()
-        locationHelper.getLastLocation()
-        val rangingResults = mutableListOf<RangingResult>()
-        var location: Location? = null
+        val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
 
         job = coroutineScope.launch {
+            coroutineScope.launch {
+                locationHelper.startLocationUpdates()
+            }
+            while (!locationHelper.available)
+                delay(100)
+
             repeat(maxIterations) {
                 if (!wifiRttManager.isAvailable) {
                     Log.e(RTT_TAG, "RTT unavailable")
@@ -63,14 +70,24 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                         rttConfig as RangingRequest,
                         currentContext.mainExecutor,
                         object : RangingResultCallback() {
+
+                            /**
+                             * p0 will have only one item in its list since it's only performing
+                             * a ranging request with one other device. Increases with more devices
+                             */
                             override fun onRangingResults(p0: MutableList<RangingResult>) {
-                                rangingResults.add(p0[0])
-                                location = locationHelper.lastLocation
-                                if (rangingResults.size >= maxIterations)
+                                rangingResults.add(Pair(p0[0], locationHelper.location!!))
+
+                                if (rangingResults.size >= maxIterations) {
+                                    locationHelper.stopLocationUpdates()
                                     continuation.resume(rangingResults)
-                                Log.d(RTT_TAG, "Ranging results: ${p0[0]}")
-                                Log.d(RTT_TAG, "Location coordinates: ${location?.latitude}," +
-                                        " ${location?.longitude}")
+                                }
+
+                                Log.d(RTT_TAG, "Distance: " +
+                                        "${String.format("%.2f", p0[0].distanceMm / 1000.0)}m " +
+                                        "Lat: ${locationHelper.location?.latitude}º " +
+                                        "Long: ${locationHelper.location?.longitude}º ")
+
                             }
 
                             override fun onRangingFailure(p0: Int) {
@@ -98,11 +115,6 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                     continuation.resume(true)
                 }
 
-                override fun onSubscribeStarted(session: SubscribeDiscoverySession) {
-                    subscribeSession = session
-                    subscribeSession!!.updateSubscribe(awareConfig as SubscribeConfig)
-                    Log.d(RTT_TAG, "Subscribed to a service")
-                }
 
                 override fun onSessionTerminated() {
                     terminated = true
