@@ -8,7 +8,6 @@ import android.net.wifi.aware.DiscoverySessionCallback
 import android.net.wifi.aware.PeerHandle
 import android.net.wifi.aware.ServiceDiscoveryInfo
 import android.net.wifi.aware.SubscribeConfig
-import android.net.wifi.aware.SubscribeDiscoverySession
 import android.net.wifi.rtt.RangingRequest
 import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.RangingResultCallback
@@ -16,7 +15,6 @@ import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.BlockingQueue
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -33,13 +31,6 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     var terminated = true
         private set
     var discoveredPeer: PeerHandle? = null
-
-    /**
-     * Ideally, this will allow for us to display intermediate values on the screen
-     */
-    lateinit var intermediateResults: BlockingQueue<Pair<RangingResult, Location>>
-        private set
-
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
@@ -66,7 +57,6 @@ open class RttHelper(context: Context, iterations: Int = 5) :
             }
             while (!locationHelper.available)
                 delay(100)
-
             repeat(maxIterations) {
                 if (!wifiRttManager.isAvailable) {
                     Log.e(RTT_TAG, "RTT unavailable")
@@ -86,7 +76,6 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                             override fun onRangingResults(p0: MutableList<RangingResult>) {
                                 val combinedResults = Pair(p0[0], locationHelper.location!!)
                                 rangingResults.add(combinedResults)
-                                intermediateResults.put(combinedResults)
 
                                 if (rangingResults.size >= maxIterations) {
                                     locationHelper.stopLocationUpdates()
@@ -110,29 +99,9 @@ open class RttHelper(context: Context, iterations: Int = 5) :
         }
     }
 
-    @SuppressLint("DefaultLocale")
-    private fun statsToString(combined: Pair<RangingResult, Location>): List<Any> {
-        val distance = combined.first.distanceMm / 1000.0
-        val distanceStdDev = combined.first.distanceStdDevMm / 1000.0
-        val rssi = combined.first.rssi.toFloat()
-        val totalAttempts = "${combined.first.numAttemptedMeasurements}"
-        val successfulAttempts = "${combined.first.numSuccessfulMeasurements}"
-        val latitude = "${combined.second.latitude}"
-        val longitude = "${combined.second.longitude}"
-
-        return listOf(
-            distance,
-            distanceStdDev,
-            rssi,
-            successfulAttempts,
-            totalAttempts,
-            latitude,
-            longitude
-        )
-    }
-
     @SuppressLint("MissingPermission")
     suspend fun findPeer(): Boolean = suspendCoroutine { continuation ->
+        var continued: Boolean = false
         awareSession?.subscribe(
             awareConfig as SubscribeConfig,
             object : DiscoverySessionCallback() {
@@ -143,7 +112,10 @@ open class RttHelper(context: Context, iterations: Int = 5) :
                     Log.d(RTT_TAG, "Found a device ${distanceMm / 1000.0}m away.")
                     discoveredPeer = info.peerHandle
                     terminated = false
-                    continuation.resume(true)
+                    if (!continued) {
+                        continued = true
+                        continuation.resume(true)
+                    }
                 }
 
 

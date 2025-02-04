@@ -3,12 +3,15 @@ package com.example.pedrov2p.ui
 import android.app.Application
 import android.location.Location
 import android.net.wifi.rtt.RangingResult
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import com.example.pedrov2p.data.PedroUiState
 import com.example.pedrov2p.ui.components.RTTResults
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 
 
 class PedroViewModel(application: Application): AndroidViewModel(application) {
@@ -56,18 +59,24 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun updateIntermediateResult(result: Pair<RangingResult, Location>) {
-        _uiState.value = _uiState.value.copy(
-            distance = result.first.distanceMm,
-            distanceStdDev = result.first.distanceStdDevMm,
-            rssi = result.first.rssi,
-            successfulMeasurements = result.first.numSuccessfulMeasurements,
-            attemptedMeasurements = result.first.numAttemptedMeasurements,
-
-        )
+        Log.d("VM", "updating intermediate values. sample: ${result.first.distanceMm}")
+        val test = _uiState.updateAndGet { currentState ->
+            currentState.copy(
+                distance = result.first.distanceMm,
+                distanceStdDev = result.first.distanceStdDevMm,
+                rssi = result.first.rssi,
+                successfulMeasurements = result.first.numSuccessfulMeasurements,
+                attemptedMeasurements = result.first.numAttemptedMeasurements,
+                latitude = result.second.latitude,
+                longitude = result.second.longitude
+            )
+        }
+        Log.d("VM", "updated? ${test.distance}")
     }
 
     fun updateFinalizedResults(finalResults: MutableList<Pair<RangingResult, Location>>) {
         TODO("Average out the values? and give a scrollable list of total passes")
+
     }
 
     fun resetForRerun() {

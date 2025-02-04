@@ -30,6 +30,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.pedrov2p.ui.PedroCompleteScreen
 import com.example.pedrov2p.ui.PedroRangingScreen
 import com.example.pedrov2p.ui.PedroSettingsScreen
 import com.example.pedrov2p.ui.PedroStandbyScreen
@@ -37,6 +38,7 @@ import com.example.pedrov2p.ui.PedroStartScreen
 import com.example.pedrov2p.ui.PedroViewModel
 import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
@@ -89,6 +91,7 @@ fun PedroAppBar(
     )
 }
 
+@OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun PedroApp(
     viewModel: PedroViewModel = viewModel(),
@@ -100,6 +103,9 @@ fun PedroApp(
     )
     val currentContext = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val rttHelper = RttHelper(currentContext)
+    val awareHelper = AwareHelper(currentContext)
+    var results: MutableList<Pair<RangingResult, Location>>
 
     Scaffold (
         topBar = {
@@ -111,7 +117,7 @@ fun PedroApp(
             )
         }
     ) { innerPadding ->
-         val uiState by viewModel.uiState.collectAsState()
+         val pedroUiState by viewModel.uiState.collectAsState()
 
         NavHost(
             navController = navController,
@@ -132,8 +138,6 @@ fun PedroApp(
                 )
             }
             composable(route = PedroScreen.Ranging.name) {
-                val rttHelper = RttHelper(currentContext, iterations = 20)
-                var results: MutableList<Pair<RangingResult, Location>>
 
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
@@ -142,23 +146,14 @@ fun PedroApp(
                         coroutineScope.launch {
                             rttHelper.startAwareSession()
                             rttHelper.findPeer()
+
                             results = rttHelper.startRangingSession()
-                        }
+                            viewModel.updateIntermediateResult(results[0])
 
-                        coroutineScope.launch {
-                            // TODO this coroutine will handle updating the screen
-                            while (!rttHelper.terminated)
-                                delay(100)
+                            rttHelper.stopRanging()
 
-                            while (rttHelper.terminated) {
-                                var formattedRangeResult = rttHelper.intermediateResults.poll(
-                                    100,
-                                    TimeUnit.MILLISECONDS
-                                )
-
-                                if (formattedRangeResult != null)
-                                    TODO("Update UI here")
-                            }
+                            // TODO after retrieving results, goto stats screen
+                            navController.navigate(PedroScreen.Complete.name)
                         }
                     },
                     onAbortClicked = {
@@ -171,8 +166,13 @@ fun PedroApp(
                     modifier = Modifier
                 )
             }
+            composable(route = PedroScreen.Complete.name) {
+                PedroCompleteScreen(
+                    uiState = pedroUiState
+                )
+            }
             composable(route = PedroScreen.Standby.name) {
-                val awareHelper = AwareHelper(currentContext)
+                // val awareHelper = AwareHelper(currentContext)
 
                 PedroStandbyScreen(
                     onClickAbort = {
