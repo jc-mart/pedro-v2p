@@ -1,6 +1,7 @@
 package com.example.pedrov2p.ui
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,12 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.pedrov2p.R
-import com.example.pedrov2p.data.PedroUiState
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 
 @SuppressLint("DefaultLocale")
 @Composable
 fun PedroCompleteScreen(
-    uiState: PedroUiState,
+    viewModel: PedroViewModel = viewModel(),
+    foundDistance: Int,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -43,7 +46,7 @@ fun PedroCompleteScreen(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "Distance ${String.format("%.2f", uiState.distance / 1000.0)}m"
+                text = "Distance $foundDistance m"
             )
             Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
             Text(

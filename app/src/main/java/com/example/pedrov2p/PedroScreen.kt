@@ -1,6 +1,7 @@
 package com.example.pedrov2p
 
 
+import android.annotation.SuppressLint
 import android.location.Location
 import android.net.wifi.rtt.RangingResult
 import android.util.Log
@@ -24,6 +25,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -40,6 +42,7 @@ import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -91,6 +94,7 @@ fun PedroAppBar(
     )
 }
 
+@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun PedroApp(
@@ -106,7 +110,6 @@ fun PedroApp(
     val rttHelper = RttHelper(currentContext)
     val awareHelper = AwareHelper(currentContext)
     var results: MutableList<Pair<RangingResult, Location>>
-    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold (
         topBar = {
@@ -145,14 +148,7 @@ fun PedroApp(
 
                         coroutineScope.launch {
                             withContext(Dispatchers.Main){
-                                rttHelper.startAwareSession()
-                                rttHelper.findPeer()
-
-                                results = rttHelper.startRangingSession()
-                                viewModel.updateIntermediateResult(results[0])
-                                Log.d("MAIN", "Distance: ${uiState.distance / 1000.0}")
-
-                                rttHelper.stopRanging()
+                                delay(15000)
 
                                 // TODO after retrieving results, goto stats screen
                                 navController.navigate(PedroScreen.Complete.name)
@@ -170,9 +166,7 @@ fun PedroApp(
                 )
             }
             composable(route = PedroScreen.Complete.name) {
-                PedroCompleteScreen(
-                    uiState = uiState
-                )
+                PedroCompleteScreen(foundDistance = 3)
             }
             composable(route = PedroScreen.Standby.name) {
                 // val awareHelper = AwareHelper(currentContext)

@@ -37,17 +37,18 @@ import android.net.wifi.rtt.ResponderConfig
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun PedroRangingScreen(
     onAbortClicked: () -> Unit,
     onStartRanging: () -> Unit,
     onStopRanging: () -> Unit,
+    viewModel: PedroViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
     // TODO Place WIFI RTT function here and ensure that sufficient permissions have been granted
     LaunchedEffect(Unit) {
-        onStartRanging()
     }
 
     Column(

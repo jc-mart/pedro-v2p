@@ -5,56 +5,59 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.pedrov2p.ui.theme.PEDROV2PTheme
+import android.Manifest
+import android.app.AlertDialog
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {
+    private val requiredPermissions = arrayOf(
+        Manifest.permission.ACCESS_WIFI_STATE,
+        Manifest.permission.CHANGE_WIFI_STATE,
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.NEARBY_WIFI_DEVICES
+    )
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            permissions ->
+            val allPermissionsGranted = permissions.all { it.value }
+
+            if (!allPermissionsGranted)
+                showPermissionDeniedMessage()
+
+        }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val wifiAwareSupported = hasSystemFeature(PackageManager.FEATURE_WIFI_AWARE)
-            val wifiRttSupported = hasSystemFeature(PackageManager.FEATURE_WIFI_RTT)
-
-            if (wifiAwareSupported && wifiRttSupported) {
-                PEDROV2PTheme {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        Greeting(
-                            name = "Android",
-                            modifier = Modifier.padding(innerPadding)
-                        )
-                    }
-                }
+            checkAndRequestPermissions()
+            PEDROV2PTheme {
+                PedroApp()
             }
-            /* TODO: Have error screen as Application relies on these APIs */
         }
     }
-}
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    PEDROV2PTheme {
-        Greeting("Android")
+    private fun showPermissionDeniedMessage() {
+        val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+        builder
+            .setTitle("Permissions Required")
+            .setMessage("Wi-Fi Aware and Wi-Fi RTT require location and Wi-Fi permissions to function" +
+                    " properly")
+            .setPositiveButton("OK") {_, _ -> }
+            .setNegativeButton("Cancel") {_, _ -> exitProcess(-1) }
     }
-}
 
-@Composable
-fun hasSystemFeature(feature: String): Boolean {
-    return LocalContext.current.packageManager.hasSystemFeature(feature)
+    private fun checkAndRequestPermissions() {
+        val missingPermissions = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missingPermissions.isNotEmpty()) {
+            requestPermissionLauncher.launch(missingPermissions.toTypedArray())
+        }
+    }
 }
