@@ -39,9 +39,9 @@ import com.example.pedrov2p.ui.PedroViewModel
 import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.withContext
 
 enum class PedroScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -106,6 +106,7 @@ fun PedroApp(
     val rttHelper = RttHelper(currentContext)
     val awareHelper = AwareHelper(currentContext)
     var results: MutableList<Pair<RangingResult, Location>>
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold (
         topBar = {
@@ -117,7 +118,6 @@ fun PedroApp(
             )
         }
     ) { innerPadding ->
-         val pedroUiState by viewModel.uiState.collectAsState()
 
         NavHost(
             navController = navController,
@@ -144,16 +144,19 @@ fun PedroApp(
                     onStartRanging = {
 
                         coroutineScope.launch {
-                            rttHelper.startAwareSession()
-                            rttHelper.findPeer()
+                            withContext(Dispatchers.Main){
+                                rttHelper.startAwareSession()
+                                rttHelper.findPeer()
 
-                            results = rttHelper.startRangingSession()
-                            viewModel.updateIntermediateResult(results[0])
+                                results = rttHelper.startRangingSession()
+                                viewModel.updateIntermediateResult(results[0])
+                                Log.d("MAIN", "Distance: ${uiState.distance / 1000.0}")
 
-                            rttHelper.stopRanging()
+                                rttHelper.stopRanging()
 
-                            // TODO after retrieving results, goto stats screen
-                            navController.navigate(PedroScreen.Complete.name)
+                                // TODO after retrieving results, goto stats screen
+                                navController.navigate(PedroScreen.Complete.name)
+                            }
                         }
                     },
                     onAbortClicked = {
@@ -168,7 +171,7 @@ fun PedroApp(
             }
             composable(route = PedroScreen.Complete.name) {
                 PedroCompleteScreen(
-                    uiState = pedroUiState
+                    uiState = uiState
                 )
             }
             composable(route = PedroScreen.Standby.name) {
