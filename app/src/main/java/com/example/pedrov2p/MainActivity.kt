@@ -10,6 +10,7 @@ import android.Manifest
 import android.app.AlertDialog
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import com.example.pedrov2p.ui.screens.PedroApp
 import kotlin.system.exitProcess
 
 class MainActivity : ComponentActivity() {

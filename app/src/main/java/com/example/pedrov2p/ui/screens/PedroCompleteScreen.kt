@@ -1,16 +1,9 @@
-package com.example.pedrov2p.ui
+package com.example.pedrov2p.ui.screens
 
-import android.content.Context
-import android.net.wifi.aware.AttachCallback
-import android.net.wifi.aware.DiscoverySessionCallback
-import android.net.wifi.aware.SubscribeConfig
-import android.net.wifi.aware.SubscribeDiscoverySession
-import android.net.wifi.aware.WifiAwareManager
-import android.net.wifi.aware.WifiAwareSession
-import android.net.wifi.rtt.WifiRttManager
-import android.util.Log
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,38 +12,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.app.ActivityCompat
 import com.example.pedrov2p.R
-import android.Manifest
-import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import android.net.MacAddress
-import android.net.wifi.aware.PeerHandle
-import android.net.wifi.aware.ServiceDiscoveryInfo
-import android.net.wifi.rtt.RangingRequest
-import android.net.wifi.rtt.RangingResult
-import android.net.wifi.rtt.RangingResultCallback
-import android.net.wifi.rtt.ResponderConfig
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+
+@SuppressLint("DefaultLocale")
 @Composable
-fun PedroRangingScreen(
-    onAbortClicked: () -> Unit,
-    onStartRanging: () -> Unit,
-    onStopRanging: () -> Unit,
+fun PedroCompleteScreen(
     viewModel: PedroViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
-    // TODO Place WIFI RTT function here and ensure that sufficient permissions have been granted
-    LaunchedEffect(Unit) {
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -63,8 +36,11 @@ fun PedroRangingScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column (
-            modifier = Modifier.weight(1f),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(dimensionResource(R.dimen.padding_small))
+                .weight(1f),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
@@ -87,27 +63,30 @@ fun PedroRangingScreen(
                 text = "Attempted Measurements"
             )
         }
-        Button(
-            onClick = onAbortClicked,
-            modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)),
+        Row(
+            modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
         ) {
-            Text(
-                text = "Abort"
-            )
+            Button(
+                onClick = { /* TODO Implement logic */ },
+            ) {
+                Text(
+                    text = "Rerun"
+                )
+            }
+            Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
+            Button(
+                onClick = { /* TODO Implement logic */ },
+            ) {
+                Text(
+                    text = "Save log"
+                )
+            }
         }
-    }
-
-    DisposableEffect(Unit) {
-        onDispose { onStopRanging() }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun PedroRangingScreenPreview() {
-    PedroRangingScreen(
-        onStartRanging = {},
-        onAbortClicked = {},
-        onStopRanging = {}
-    )
+fun PedroCompleteScreenPreview() {
+    // PedroCompleteScreen()
 }

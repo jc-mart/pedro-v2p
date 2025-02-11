@@ -1,10 +1,7 @@
-package com.example.pedrov2p.ui
+package com.example.pedrov2p.ui.screens
 
-import android.annotation.SuppressLint
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -16,16 +13,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.pedrov2p.R
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-
-@SuppressLint("DefaultLocale")
 @Composable
-fun PedroCompleteScreen(
+fun PedroRangingScreen(
+    onAbortClicked: () -> Unit,
+    onStartRanging: () -> Unit,
+    onStopRanging: () -> Unit,
     viewModel: PedroViewModel = viewModel(),
-    foundDistance: Int,
     modifier: Modifier = Modifier
 ) {
+    // TODO Place WIFI RTT function here and ensure that sufficient permissions have been granted
+    LaunchedEffect(Unit) {
+        onStartRanging()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -38,15 +42,12 @@ fun PedroCompleteScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(dimensionResource(R.dimen.padding_small))
-                .weight(1f),
+        Column (
+            modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "Distance $foundDistance m"
+                text = "Distance"
             )
             Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
             Text(
@@ -65,30 +66,27 @@ fun PedroCompleteScreen(
                 text = "Attempted Measurements"
             )
         }
-        Row(
-            modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
+        Button(
+            onClick = onAbortClicked,
+            modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)),
         ) {
-            Button(
-                onClick = { /* TODO Implement logic */ },
-            ) {
-                Text(
-                    text = "Rerun"
-                )
-            }
-            Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
-            Button(
-                onClick = { /* TODO Implement logic */ },
-            ) {
-                Text(
-                    text = "Save log"
-                )
-            }
+            Text(
+                text = "Abort"
+            )
         }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose { onStopRanging() }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun PedroCompleteScreenPreview() {
-    // PedroCompleteScreen()
+fun PedroRangingScreenPreview() {
+    PedroRangingScreen(
+        onStartRanging = {},
+        onAbortClicked = {},
+        onStopRanging = {}
+    )
 }

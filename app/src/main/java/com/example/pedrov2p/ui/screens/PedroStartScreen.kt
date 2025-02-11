@@ -1,4 +1,4 @@
-package com.example.pedrov2p.ui
+package com.example.pedrov2p.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

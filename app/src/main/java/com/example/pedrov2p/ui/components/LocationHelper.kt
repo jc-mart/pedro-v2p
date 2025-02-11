@@ -46,6 +46,7 @@ class LocationHelper(context: Context) {
     @SuppressLint("MissingPermission")
     suspend fun startLocationUpdates(): Boolean = suspendCoroutine {
         job = coroutineScope.launch {
+            Log.d(LOCATION_TAG, "Initializing location services")
             locationCallback = object : LocationCallback() {
                 override fun onLocationAvailability(p0: LocationAvailability) {
                     Log.d(LOCATION_TAG, "Location " +

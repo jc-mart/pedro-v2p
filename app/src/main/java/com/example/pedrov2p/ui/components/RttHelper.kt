@@ -34,11 +34,13 @@ open class RttHelper(context: Context, iterations: Int = 5) :
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
-        if (discoveredPeer != null)
+        if (discoveredPeer != null) {
+            Log.d(RTT_TAG, "Building config")
             rttConfig = RangingRequest.Builder().run {
                 addWifiAwarePeer(discoveredPeer as PeerHandle)
                 build()
             }
+        }
         else {
             Log.e(RTT_TAG, "Failed to build a ranging request due to missing PeerHandle")
         }
@@ -48,15 +50,23 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     suspend fun startRangingSession(): MutableList<Pair<RangingResult, Location>> = suspendCoroutine {
         continuation ->
 
+        Log.d(RTT_TAG, "In ranging session function")
         buildRttConfig()
+        Log.d(RTT_TAG, "Built config with peer handle.")
         val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
 
         job = coroutineScope.launch {
             coroutineScope.launch {
+                Log.d(RTT_TAG, "Launching location helper for location updates")
                 locationHelper.startLocationUpdates()
             }
-            while (!locationHelper.available)
+
+            Log.d(RTT_TAG, "Waiting for location to kick off")
+            while (!locationHelper.available) {
                 delay(100)
+            }
+
+            Log.d(RTT_TAG, "Beginning iterations")
             repeat(maxIterations) {
                 if (!wifiRttManager.isAvailable) {
                     Log.e(RTT_TAG, "RTT unavailable")

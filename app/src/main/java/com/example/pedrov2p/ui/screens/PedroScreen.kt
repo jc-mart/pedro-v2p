@@ -1,4 +1,4 @@
-package com.example.pedrov2p
+package com.example.pedrov2p.ui.screens
 
 
 import android.annotation.SuppressLint
@@ -25,24 +25,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.pedrov2p.ui.PedroCompleteScreen
-import com.example.pedrov2p.ui.PedroRangingScreen
-import com.example.pedrov2p.ui.PedroSettingsScreen
-import com.example.pedrov2p.ui.PedroStandbyScreen
-import com.example.pedrov2p.ui.PedroStartScreen
-import com.example.pedrov2p.ui.PedroViewModel
+import com.example.pedrov2p.R
 import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -94,7 +87,6 @@ fun PedroAppBar(
     )
 }
 
-@SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun PedroApp(
@@ -110,6 +102,7 @@ fun PedroApp(
     val rttHelper = RttHelper(currentContext)
     val awareHelper = AwareHelper(currentContext)
     var results: MutableList<Pair<RangingResult, Location>>
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold (
         topBar = {
@@ -147,12 +140,19 @@ fun PedroApp(
                     onStartRanging = {
 
                         coroutineScope.launch {
-                            withContext(Dispatchers.Main){
-                                delay(15000)
 
-                                // TODO after retrieving results, goto stats screen
-                                navController.navigate(PedroScreen.Complete.name)
-                            }
+                            rttHelper.startAwareSession()
+                            rttHelper.findPeer()
+
+                            results = rttHelper.startRangingSession()
+                            viewModel.updateIntermediateResult(results[0])
+                            Log.d("MAIN", "Distance: ${uiState.distance / 1000.0}")
+
+                            rttHelper.stopRanging()
+
+                            // TODO after retrieving results, goto stats screen
+                            navController.navigate(PedroScreen.Complete.name)
+
                         }
                     },
                     onAbortClicked = {
@@ -166,7 +166,8 @@ fun PedroApp(
                 )
             }
             composable(route = PedroScreen.Complete.name) {
-                PedroCompleteScreen(foundDistance = 3)
+                PedroCompleteScreen(
+                )
             }
             composable(route = PedroScreen.Standby.name) {
                 // val awareHelper = AwareHelper(currentContext)
@@ -177,10 +178,10 @@ fun PedroApp(
                         navController.navigate((PedroScreen.Start.name))
                     },
                     onStartPublishing = {
-                            coroutineScope.launch {
-                                awareHelper.startAwareSession()
-                                awareHelper.startService()
-                            }
+                        coroutineScope.launch {
+                            awareHelper.startAwareSession()
+                            awareHelper.startService()
+                        }
                         // awareHelper.startService()
                     },
                     onStopPublishing = { awareHelper.stopAwareSession() }

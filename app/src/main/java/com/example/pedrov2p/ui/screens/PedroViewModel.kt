@@ -1,16 +1,14 @@
-package com.example.pedrov2p.ui
+package com.example.pedrov2p.ui.screens
 
 import android.app.Application
 import android.location.Location
 import android.net.wifi.aware.PeerHandle
 import android.net.wifi.rtt.RangingResult
 import android.util.Log
-import androidx.annotation.MainThread
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pedrov2p.data.PedroUiState
-import com.example.pedrov2p.ui.components.LocationHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import com.example.pedrov2p.ui.repositories.AwareRepository
 import com.example.pedrov2p.ui.repositories.RTTRepository
@@ -75,7 +73,7 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         return verified
     }
 
-    private fun updateIntermediateResult(result: Pair<RangingResult, Location>) {
+    fun updateIntermediateResult(result: Pair<RangingResult, Location>) {
         Log.d("VM", "updating intermediate values. sample: ${result.first.distanceMm}")
         _uiState.update { currentState ->
             currentState.copy(
