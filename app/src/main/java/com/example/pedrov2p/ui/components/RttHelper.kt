@@ -8,6 +8,7 @@ import android.net.wifi.aware.DiscoverySessionCallback
 import android.net.wifi.aware.PeerHandle
 import android.net.wifi.aware.ServiceDiscoveryInfo
 import android.net.wifi.aware.SubscribeConfig
+import android.net.wifi.aware.WifiAwareSession
 import android.net.wifi.rtt.RangingRequest
 import android.net.wifi.rtt.RangingResult
 import android.net.wifi.rtt.RangingResultCallback
@@ -15,6 +16,8 @@ import android.net.wifi.rtt.WifiRttManager
 import android.util.Log
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -31,18 +34,6 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     var terminated = true
         private set
     var discoveredPeer: PeerHandle? = null
-    private var serviceDiscoverySessionCallback = object : DiscoverySessionCallback() {
-        override fun onServiceDiscoveredWithinRange(
-            info: ServiceDiscoveryInfo,
-            distanceMm: Int
-        ) {
-            discoveredPeer = info.peerHandle
-            Log.d(
-                RTT_TAG,
-                "Found peer ${String.format("%.2f", distanceMm / 1000.0)}m away"
-            )
-        }
-    }
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
@@ -70,6 +61,7 @@ open class RttHelper(context: Context, iterations: Int = 5) :
         job = coroutineScope.launch {
             coroutineScope.launch {
                 Log.d(RTT_TAG, "Launching location helper for location updates")
+                // TODO call this up in the viewmodel instead. Separation of concerns
                 locationHelper.startLocationUpdates()
             }
 
@@ -150,20 +142,29 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     }
 
     @SuppressLint("MissingPermission")
-    suspend fun discoverPeer(): PeerHandle {
-        awareSession?.subscribe(
-            awareConfig as SubscribeConfig,
-            serviceDiscoverySessionCallback,
-            null
+    suspend fun discoverPeer(session: WifiAwareSession, subscribeConfig: SubscribeConfig):
+        PeerHandle = suspendCancellableCoroutine { continuation ->
+
+        session.subscribe(
+        subscribeConfig,
+        object : DiscoverySessionCallback() {
+            override fun onServiceDiscoveredWithinRange(
+                info: ServiceDiscoveryInfo,
+                distanceMm: Int
+            ) {
+                continuation.resume(info.peerHandle)
+
+                Log.d(
+                    RTT_TAG,
+                    "Discovered peer ${String.format("%.2f", distanceMm / 1000.0)}m away"
+                )
+            }
+        },
+        null
         )
-
-        while (discoveredPeer == null)
-            delay(1000)
-
-        return discoveredPeer as PeerHandle
     }
 
-    fun buildConfig(peerHandle: PeerHandle): RangingRequest {
+    fun buildRangingConfig(peerHandle: PeerHandle): RangingRequest {
         val rangingRequest = RangingRequest.Builder().apply {
             addWifiAwarePeer(peerHandle)
         }.build()
@@ -171,17 +172,40 @@ open class RttHelper(context: Context, iterations: Int = 5) :
         return rangingRequest
     }
 
+    fun buildSubscribeConfig(serviceName: String): SubscribeConfig {
+        val subscribeConfig = SubscribeConfig.Builder().apply {
+            setServiceName(serviceName)
+            setMinDistanceMm(0)
+        }.build()
+
+        return subscribeConfig
+    }
+
     @SuppressLint("MissingPermission")
-    suspend fun performRtt() {
-        buildRttConfig()
+    suspend fun performRtt(rangingRequest: RangingRequest, executor: Executor): RangingResult =
+        suspendCancellableCoroutine { continuation ->
 
+            wifiRttManager.startRanging(
+                rangingRequest,
+                executor,
+                object : RangingResultCallback() {
+                    override fun onRangingResults(results: MutableList<RangingResult>) {
+                        continuation.resume(results[0])
 
+                        Log.d(RTT_TAG, "Successfully retrieved a RangingResult")
+                    }
+
+                    override fun onRangingFailure(code: Int) {
+                        Log.e(RTT_TAG, "Failed to retrieve RangingResult with error $code")
+                    }
+                }
+            )
     }
 
     fun stopRanging() {
         stopAwareSession()
-        // subscribeSession?.close()
         discoveredPeer = null
+
         Log.d(RTT_TAG, "Subscription session closed, discoveredPeer reset")
     }
 }

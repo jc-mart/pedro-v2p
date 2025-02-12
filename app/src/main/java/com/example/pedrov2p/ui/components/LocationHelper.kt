@@ -15,6 +15,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import java.util.concurrent.Executor
+import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 const val LOCATION_TAG: String = "LOCATION_HELPER"
@@ -79,5 +82,51 @@ class LocationHelper(context: Context) {
         locationCallback = null
 
         Log.d(LOCATION_TAG, "Stopped location updates")
+    }
+
+    fun buildLocationRequest(): LocationRequest {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY, 0
+        ).build()
+
+        return locationRequest
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun startUpdates(
+        locationProviderClient: FusedLocationProviderClient,
+        locationRequest: LocationRequest,
+        executor: Executor,
+    ): Boolean = suspendCancellableCoroutine { continuation ->
+        locationProviderClient.requestLocationUpdates(
+            locationRequest,
+            executor,
+            object : LocationCallback() {
+                override fun onLocationAvailability(p0: LocationAvailability) {
+                    Log.d(
+                        LOCATION_TAG,
+                        "Location ${if (p0.isLocationAvailable) "" else "un"}available"
+                    )
+                }
+
+                override fun onLocationResult(p0: LocationResult) {
+                    location = p0.lastLocation
+                    continuation.resume(true)
+                }
+            }
+        )
+    }
+
+    fun getLocationClient(): FusedLocationProviderClient {
+        return LocationServices.getFusedLocationProviderClient(currentContext)
+    }
+
+    fun stopUpdates(
+        locationProviderClient: FusedLocationProviderClient,
+        locationCallback: LocationCallback
+    ) {
+        locationProviderClient.removeLocationUpdates(locationCallback)
+
+        Log.d(LOCATION_TAG, "Stopped receiving location updates")
     }
 }

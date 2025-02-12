@@ -1,5 +1,11 @@
 package com.example.pedrov2p.data
 
+import android.net.wifi.aware.PublishDiscoverySession
+import android.net.wifi.aware.WifiAwareSession
+import com.example.pedrov2p.ui.components.LocationHelper
+import com.example.pedrov2p.ui.components.RttHelper
+import com.google.android.gms.location.FusedLocationProviderClient
+
 data class PedroUiState(
     // TODO Good idea to make these a list for every individual RTT pass
 
@@ -32,6 +38,13 @@ data class PedroUiState(
     val timestamp: Long = -1,
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
+    // Holds the helpers
+    val wifiAwareSession: WifiAwareSession? = null,
+    val publishDiscoverySession: PublishDiscoverySession? = null,
+    val locationClient: FusedLocationProviderClient? = null,
+    val awareHelper: RttHelper? = null,
+    val rttHelper: RttHelper? = null,
+    val locationHelper: LocationHelper? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

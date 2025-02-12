@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -98,5 +99,52 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
                 null
             )
         }
+    }
+
+    suspend fun startSession(): WifiAwareSession = suspendCancellableCoroutine { continuation ->
+        wifiAwareManager.attach(object : AttachCallback() {
+            override fun onAttached(session: WifiAwareSession) {
+                continuation.resume(session)
+
+                Log.d(AWARE_TAG, "Successfully attached to aware session")
+            }
+
+            override fun onAttachFailed() {
+                Log.e(AWARE_TAG, "Attaching failed")
+            }
+        },
+        null)
+    }
+
+    fun stopSession(session: WifiAwareSession) {
+        session.close()
+
+        Log.d(AWARE_TAG, "Closed aware session")
+    }
+
+    fun buildPublishConfig(serviceName: String): PublishConfig {
+        val publishConfig = PublishConfig.Builder().apply {
+            setServiceName(serviceName)
+            setRangingEnabled(true)
+        }.build()
+
+        return publishConfig
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun publishSession(session: WifiAwareSession, publishConfig: PublishConfig):
+        PublishDiscoverySession = suspendCancellableCoroutine { continuation ->
+
+        session.publish(
+            publishConfig,
+            object : DiscoverySessionCallback() {
+                override fun onPublishStarted(session: PublishDiscoverySession) {
+                    continuation.resume(session)
+
+                    Log.d(AWARE_TAG, "Broadcasting service")
+                }
+            },
+            null
+        )
     }
 }

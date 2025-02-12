@@ -1,6 +1,7 @@
 package com.example.pedrov2p.ui.screens
 
 import android.app.Application
+import android.content.Context
 import android.location.Location
 import android.net.wifi.aware.PeerHandle
 import android.net.wifi.rtt.RangingResult
@@ -8,11 +9,17 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pedrov2p.data.PedroUiState
+import com.example.pedrov2p.ui.components.AwareHelper
+import com.example.pedrov2p.ui.components.LocationHelper
 import com.example.pedrov2p.ui.components.RttHelper
+import com.example.pedrov2p.ui.components.SERVICE_NAME
 import com.example.pedrov2p.ui.repositories.AwareRepository
 import com.example.pedrov2p.ui.repositories.RTTRepository
 import com.example.pedrov2p.ui.repositories.WifiAwareSessionStatus
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +33,18 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     val uiState: StateFlow<PedroUiState> = _uiState.asStateFlow()
     // This will have to have methods here to update the State, followed by the UI
     private val rttHelper = RttHelper(application.applicationContext)
+    private val locationHelper = LocationHelper(application.applicationContext)
+    private val appContext = application
+    /**
+    init {
+        _uiState.update { state ->
+            state.copy(
+                rttHelper = RttHelper(application.applicationContext),
+                locationHelper = LocationHelper(application.applicationContext)
+            )
+        }
+    }
+    **/
 
     fun updateRun(results: MutableList<Pair<RangingResult, Location>>) {
         _uiState.value = _uiState.value.copy(
@@ -115,7 +134,45 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     }
 
 
-    suspend fun startRanging() {
+
+    suspend fun startRttRanging(iterations: Int, timeDelay: Long = 0):
+        MutableList<Pair<RangingResult, Location>> {
+        val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val locationClient = locationHelper.getLocationClient()
+            val locationRequest = locationHelper.buildLocationRequest()
+            val ready = locationHelper.startUpdates(
+                locationClient,
+                locationRequest,
+                appContext.mainExecutor
+            )
+            val awareSession = rttHelper.startSession()
+            val subscribeConfig = rttHelper.buildSubscribeConfig(SERVICE_NAME)
+            val peerHandle = rttHelper.discoverPeer(awareSession, subscribeConfig)
+            val rangingConfig = rttHelper.buildRangingConfig(peerHandle)
+
+            repeat(iterations) {
+                val rangingResult = rttHelper.performRtt(rangingConfig, appContext.mainExecutor)
+                val currentLocation = locationHelper.location!!
+                rangingResults.add(Pair(rangingResult, currentLocation))
+                delay(timeDelay)
+            }
+
+            rttHelper.stopSession(awareSession)
+
+            _uiState.update { state ->
+                state.copy(
+                    distance = rangingResults[0].first.distanceMm
+                )
+            }
+        }
+
+        return rangingResults
+    }
+
+
+    suspend fun startRangingOld() {
         viewModelScope.launch {
             Log.d(VM_TAG, "Starting aware session")
             rttHelper.startAwareSession()
@@ -151,6 +208,7 @@ class PedroViewModelNew(
 
     fun initializeSession() {
         awareRepository.initializeSession()
+
     }
 
     fun publishService(serviceName: String) {
@@ -178,4 +236,6 @@ class PedroViewModelNew(
         _sessionStatus.value = WifiAwareSessionStatus.Idle
         _rangingResults.value = emptyList()
     }
+
+
 }
