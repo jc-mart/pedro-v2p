@@ -64,7 +64,7 @@ open class AwareHelper(context: Context, rttMode: Boolean = false) {
 
             override fun onAttachFailed() {
                 Log.e(AWARE_TAG, "Attaching failed")
-                continuation.resumeWithException(RuntimeException("Failed to attach to a session"))
+                // continuation.resumeWithException(RuntimeException("Failed to attach to a session"))
             }
         }, null)
     }

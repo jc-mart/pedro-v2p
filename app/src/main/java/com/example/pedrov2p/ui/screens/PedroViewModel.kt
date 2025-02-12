@@ -22,20 +22,10 @@ import kotlinx.coroutines.launch
 const val VM_TAG = "PedroViewModel"
 
 class PedroViewModel(application: Application): AndroidViewModel(application) {
-    private val rttHelper = RttHelper(application.applicationContext)
     private val _uiState = MutableStateFlow(PedroUiState())
     val uiState: StateFlow<PedroUiState> = _uiState.asStateFlow()
-    init {
-        Log.d("VVMM", "ViewModel initialized ui: ${System.identityHashCode(uiState)}")
-    }
-
-    /**
-     * TODO Update DataStore structure with received values from wifi rtt
-     */
-
-    fun getDistance(): Int {
-        return uiState.value.distance
-    }
+    // This will have to have methods here to update the State, followed by the UI
+    private val rttHelper = RttHelper(application.applicationContext)
 
     fun updateRun(results: MutableList<Pair<RangingResult, Location>>) {
         _uiState.value = _uiState.value.copy(
@@ -113,6 +103,10 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
             timestamp = -1,
             pedroVerified = false,
         )
+
+        viewModelScope.launch {
+            viewModelScope
+        }
     }
 
     override fun onCleared() {

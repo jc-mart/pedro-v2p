@@ -31,6 +31,18 @@ open class RttHelper(context: Context, iterations: Int = 5) :
     var terminated = true
         private set
     var discoveredPeer: PeerHandle? = null
+    private var serviceDiscoverySessionCallback = object : DiscoverySessionCallback() {
+        override fun onServiceDiscoveredWithinRange(
+            info: ServiceDiscoveryInfo,
+            distanceMm: Int
+        ) {
+            discoveredPeer = info.peerHandle
+            Log.d(
+                RTT_TAG,
+                "Found peer ${String.format("%.2f", distanceMm / 1000.0)}m away"
+            )
+        }
+    }
 
     /* To be run when PeerHandle's found */
     private fun buildRttConfig() {
@@ -135,6 +147,35 @@ open class RttHelper(context: Context, iterations: Int = 5) :
             },
             null
         )
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun discoverPeer(): PeerHandle {
+        awareSession?.subscribe(
+            awareConfig as SubscribeConfig,
+            serviceDiscoverySessionCallback,
+            null
+        )
+
+        while (discoveredPeer == null)
+            delay(1000)
+
+        return discoveredPeer as PeerHandle
+    }
+
+    fun buildConfig(peerHandle: PeerHandle): RangingRequest {
+        val rangingRequest = RangingRequest.Builder().apply {
+            addWifiAwarePeer(peerHandle)
+        }.build()
+
+        return rangingRequest
+    }
+
+    @SuppressLint("MissingPermission")
+    suspend fun performRtt() {
+        buildRttConfig()
+
+
     }
 
     fun stopRanging() {

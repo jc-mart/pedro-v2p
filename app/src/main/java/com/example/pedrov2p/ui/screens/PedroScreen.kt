@@ -36,6 +36,7 @@ import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -140,19 +141,19 @@ fun PedroApp(
                     onStartRanging = {
 
                         coroutineScope.launch {
+                            with (Dispatchers.Main) {
+                                rttHelper.startAwareSession()
+                                val temp = async { rttHelper.discoverPeer() }
 
-                            rttHelper.startAwareSession()
-                            rttHelper.findPeer()
+                                results = rttHelper.startRangingSession()
+                                viewModel.updateIntermediateResult(results[0])
+                                Log.d("MAIN", "Distance: ${uiState.distance / 1000.0}")
 
-                            results = rttHelper.startRangingSession()
-                            viewModel.updateIntermediateResult(results[0])
-                            Log.d("MAIN", "Distance: ${uiState.distance / 1000.0}")
+                                rttHelper.stopRanging()
 
-                            rttHelper.stopRanging()
-
-                            // TODO after retrieving results, goto stats screen
-                            navController.navigate(PedroScreen.Complete.name)
-
+                                // TODO after retrieving results, goto stats screen
+                                navController.navigate(PedroScreen.Complete.name)
+                            }
                         }
                     },
                     onAbortClicked = {
