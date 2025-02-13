@@ -8,7 +8,9 @@ import android.net.wifi.rtt.RangingResult
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,29 +43,24 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     private val rttHelper = RttHelper(application.applicationContext)
     private val locationHelper = LocationHelper(application.applicationContext)
     private val appContext = application
-    /**
-    init {
-        _uiState.update { state ->
 
-   ]
-    state.copy(
-                rttHelper = RttHelper(application.applicationContext),
-                locationHelper = LocationHelper(application.applicationContext)
-            )
-        }
+    var timeInput by mutableStateOf("13")
+        private set
+    var distanceInput by mutableStateOf("7.7")
+        private set
+    var logPrefix by mutableStateOf("rtt_")
+        private set
+
+    fun updateLogPrefix(input: String) {
+        logPrefix = input
     }
-    **/
 
-    fun updateRun(results: MutableList<Pair<RangingResult, Location>>) {
-        _uiState.value = _uiState.value.copy(
-            distanceArray = results.map { it.first.distanceMm }.toTypedArray(),
-            distanceStdDevArray = results.map { it.first.distanceStdDevMm }.toTypedArray(),
-            rssiArray = results.map { it.first.rssi }.toTypedArray(),
-            timestampArray = results.map { it.first.rangingTimestampMillis }.toTypedArray(),
-            is80211azNtbMeasurement = results[0].first.is80211azNtbMeasurement,
-            is80211mcMeasurement = results[0].first.is80211mcMeasurement,
-            pedroVerified = false // TODO update this based on verify run function
-        )
+    fun updateTimeThreshold(input: String) {
+        timeInput = input
+    }
+
+    fun updateDistanceThreshold(input: String) {
+        distanceInput = input
     }
 
     /**
@@ -113,27 +110,7 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun resetForRerun() {
-        _uiState.value = _uiState.value.copy(
-            distanceArray = Array(_uiState.value.maxIterations) {-1},
-            distance = -1,
-            distanceStdDevArray = Array(_uiState.value.maxIterations) {-1},
-            distanceStdDev = -1,
-            rssiArray = Array(_uiState.value.maxIterations) {-1},
-            rssi = -1,
-            is80211azNtbMeasurement = false,
-            is80211mcMeasurement = false,
-            attemptedMeasurementsArray = Array(_uiState.value.maxIterations) {-1},
-            attemptedMeasurements = -1,
-            successfulMeasurementsArray = Array(_uiState.value.maxIterations) {-1},
-            successfulMeasurements = -1,
-            timestampArray = Array(_uiState.value.maxIterations) { -1 },
-            timestamp = -1,
-            pedroVerified = false,
-        )
-
-        viewModelScope.launch {
-            viewModelScope
-        }
+        TODO("Not yet implemented")
     }
 
     override fun onCleared() {
@@ -146,6 +123,8 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     suspend fun startRttRanging(iterations: Int, timeDelay: Long = 0):
         MutableList<Pair<RangingResult, Location>> = suspendCoroutine { continuation ->
         val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
+        updateTimeThreshold(timeInput)
+        updateDistanceThreshold(distanceInput)
 
         viewModelScope.launch(Dispatchers.IO) {
             val locationClient = locationHelper.getLocationClient()
@@ -166,14 +145,18 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
                 Log.d(VM_TAG, "Dist: ${rangingResult.distanceMm} Lat: ${currentLocation.latitude}")
                 rangingResults.add(Pair(rangingResult, currentLocation))
+                _uiState.value.distance = rangingResult.distanceMm
                 delay(timeDelay)
             }
 
             rttHelper.stopSession(awareSession)
-
+            _uiState.value.distanceStdDev = rangingResults[0].first.distanceStdDevMm
+            // This updates the distance
             _uiState.value.distance = rangingResults[0].first.distanceMm
-
-            Log.d(VM_TAG, "Updated UI? ${_uiState.value.distance}")
+            updateResults(rangingResults)
+            Log.d(VM_TAG, "Ranging Results: ${_uiState.value.distanceArray}")
+            Log.d(VM_TAG, "State: ${_uiState}")
+            Log.d(VM_TAG, "Updated UI? ${_uiState.value.distance} RSSI: ${_uiState.value.rssi}")
 
             continuation.resume(rangingResults)
         }
@@ -181,75 +164,35 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         // return rangingResults
     }
 
+    private fun updateResults(rangingResults: MutableList<Pair<RangingResult, Location>>) {
+        _uiState.value.distanceArray = rangingResults.map { (rangingResult, _) ->
+            rangingResult.distanceMm
+        }.toMutableList()
+        _uiState.value.distanceStdDevArray = rangingResults.map { (rangingResult, _) ->
+            rangingResult.distanceStdDevMm
+        }.toMutableList()
+        _uiState.value.rssiArray = rangingResults.map { (rangingResult, _) ->
+            rangingResult.rssi
+        }.toMutableList()
+        _uiState.value.attemptedMeasurementsArray = rangingResults.map { (rangingResult, _) ->
+            rangingResult.numAttemptedMeasurements
+        }.toMutableList()
+        _uiState.value.successfulMeasurementsArray = rangingResults.map { (rangingResult, _) ->
+            rangingResult.numSuccessfulMeasurements
+        }.toMutableList()
+        _uiState.value.timestampArray = rangingResults.map { (rangingResult, _) ->
+            rangingResult.rangingTimestampMillis
+        }.toMutableList()
+        _uiState.value.locations = rangingResults.map { (_, location) ->
+            Pair(location.latitude, location.longitude)
+        }.toMutableList()
+    }
+
     fun getDistance(): Int {
         return _uiState.value.distance
     }
 
-
-    suspend fun startRangingOld() {
-        viewModelScope.launch {
-            Log.d(VM_TAG, "Starting aware session")
-            rttHelper.startAwareSession()
-            rttHelper.findPeer()
-            Log.d(VM_TAG, "Performing ranging session")
-            val rangingResults = rttHelper.startRangingSession()
-            rttHelper.stopRanging()
-            Log.d(VM_TAG, "Updating results.")
-            _uiState.update { currentState ->
-                currentState.copy(
-                    distance = rangingResults[0].first.distanceMm
-                )
-            }
-            Log.d(VM_TAG, "UI hash: ${System.identityHashCode(uiState)}\n_ui:${System.identityHashCode(_uiState)}")
-            Log.d(VM_TAG, "NEW DISTANCE: ${uiState.value.distance} should be ${rangingResults[0].first.distanceMm}")
-            Log.d(VM_TAG, "Other: ${_uiState.value.distance}")
-        }
+    fun getDistanceStdDev(): Int {
+        return _uiState.value.distanceStdDev
     }
-
-}
-
-class PedroViewModelNew(
-    private val awareRepository: AwareRepository,
-    private val rttRepository: RTTRepository
-) : ViewModel() {
-    private val _sessionStatus = MutableStateFlow<WifiAwareSessionStatus>(
-        WifiAwareSessionStatus.Idle
-    )
-    val sessionStatus: StateFlow<WifiAwareSessionStatus> get() = _sessionStatus
-
-    private val _rangingResults = MutableStateFlow<List<RangingResult>>(emptyList())
-    val rangingResults: StateFlow<List<RangingResult>> get() = _rangingResults
-
-    fun initializeSession() {
-        awareRepository.initializeSession()
-
-    }
-
-    fun publishService(serviceName: String) {
-        awareRepository.publishService(serviceName)
-    }
-
-    fun subscribeAndPerformRtt(serviceName: String, iterations: Int = 5) {
-        awareRepository.subscribeToService(serviceName) { peerHandle ->
-            repeat(iterations) {
-                performRttRanging(peerHandle)
-            }
-        }
-    }
-
-    private fun performRttRanging(peerHandle: PeerHandle) {
-        viewModelScope.launch {
-            rttRepository.performRttRanging(peerHandle) { result ->
-                _rangingResults.value = _rangingResults.value.plus(result)
-            }
-        }
-    }
-
-    fun cleanup() {
-        awareRepository.cleanup()
-        _sessionStatus.value = WifiAwareSessionStatus.Idle
-        _rangingResults.value = emptyList()
-    }
-
-
 }

@@ -28,6 +28,10 @@ import com.example.pedrov2p.R
 
 @Composable
 fun PedroStartScreen(
+    timeInput: String,
+    distanceInput: String,
+    onTimeInputChanged: (String) -> Unit,
+    onDistanceInputChanged: (String) -> Unit,
     onClickRangeRequest: () -> Unit = {},
     onClickStandbyMode: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -58,7 +62,7 @@ fun PedroStartScreen(
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
             OutlinedTextField(
-                value = "",
+                value = timeInput,
                 singleLine = true,
                 shape = shapes.large,
                 modifier = Modifier.fillMaxWidth(),
@@ -67,9 +71,9 @@ fun PedroStartScreen(
                     unfocusedContainerColor = colorScheme.surface,
                     disabledContainerColor = colorScheme.surface,
                 ),
-                onValueChange = { /* TODO populate this field */ },
+                onValueChange = onTimeInputChanged,
                 label = {
-                    Text("Time Threshold")
+                    Text("Time Threshold (seconds)")
                 },
                 keyboardOptions = KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number,
@@ -78,7 +82,7 @@ fun PedroStartScreen(
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
             OutlinedTextField(
-                value = "",
+                value = distanceInput,
                 singleLine = true,
                 shape = shapes.large,
                 modifier = Modifier.fillMaxWidth(),
@@ -87,9 +91,9 @@ fun PedroStartScreen(
                     unfocusedContainerColor = colorScheme.surface,
                     disabledContainerColor = colorScheme.surface,
                 ),
-                onValueChange = { /* TODO populate this field */ },
+                onValueChange = onDistanceInputChanged,
                 label = {
-                    Text("Distance Threshold")
+                    Text("Distance Threshold (meters)")
                 },
                 keyboardOptions =  KeyboardOptions.Default.copy(
                     keyboardType = KeyboardType.Number,
@@ -123,5 +127,10 @@ private fun getAppPermissions() {
 @Preview(showBackground = true)
 @Composable
 fun PedroStartScreenPreview() {
-    PedroStartScreen()
+    PedroStartScreen(
+        timeInput = "",
+        distanceInput = "",
+        onTimeInputChanged = {},
+        onDistanceInputChanged = {}
+    )
 }

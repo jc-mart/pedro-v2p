@@ -123,6 +123,10 @@ fun PedroApp(
         ) {
             composable(route = PedroScreen.Start.name) {
                 PedroStartScreen(
+                    timeInput = viewModel.timeInput,
+                    distanceInput = viewModel.distanceInput,
+                    onTimeInputChanged = { viewModel.updateTimeThreshold(it) },
+                    onDistanceInputChanged = { viewModel.updateDistanceThreshold(it) },
                     onClickRangeRequest = {
                         // TODO modify viewModel if needed
                         navController.navigate(PedroScreen.Ranging.name)
@@ -139,30 +143,11 @@ fun PedroApp(
                 // TODO once ranging is complete, go to complete screen
                 PedroRangingScreen(
                     onStartRanging = {
-
                         coroutineScope.launch {
                             viewModel.startRttRanging(5)
                             navController.navigate(PedroScreen.Complete.name)
 
                         }
-
-                        /**
-                        coroutineScope.launch {
-                            with (Dispatchers.Main) {
-                                rttHelper.startAwareSession()
-                                val temp = async { rttHelper.discoverPeer() }
-
-                                results = rttHelper.startRangingSession()
-                                viewModel.updateIntermediateResult(results[0])
-                                Log.d("MAIN", "Distance: ${uiState.distance / 1000.0}")
-
-                                rttHelper.stopRanging()
-
-                                // TODO after retrieving results, goto stats screen
-                            }
-                        }
-                        **/
-
                     },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
@@ -199,7 +184,12 @@ fun PedroApp(
             }
             composable(route = PedroScreen.Settings.name) {
                 PedroSettingsScreen(
-
+                    timeInput = viewModel.timeInput,
+                    distanceInput = viewModel.distanceInput,
+                    logInput = viewModel.logPrefix,
+                    onTimeInputChanged = { viewModel.updateTimeThreshold(it) },
+                    onDistanceInputChanged = { viewModel.updateDistanceThreshold(it) },
+                    onLogInputChanged = { viewModel.updateLogPrefix(it) }
                 )
             }
         }

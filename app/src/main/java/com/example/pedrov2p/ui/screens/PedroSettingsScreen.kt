@@ -23,11 +23,18 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pedrov2p.R
 import com.example.pedrov2p.ui.theme.Shapes
 
 @Composable
 fun PedroSettingsScreen(
+    timeInput: String,
+    onTimeInputChanged: (String) -> Unit,
+    distanceInput: String,
+    onDistanceInputChanged: (String) -> Unit,
+    logInput: String,
+    onLogInputChanged: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -55,7 +62,7 @@ fun PedroSettingsScreen(
         }
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
         OutlinedTextField(
-            value = "",
+            value = logInput,
             singleLine = true,
             shape = Shapes.large,
             modifier = Modifier.fillMaxWidth(),
@@ -64,7 +71,7 @@ fun PedroSettingsScreen(
                 unfocusedContainerColor = colorScheme.surface,
                 disabledContainerColor = colorScheme.surface
             ),
-            onValueChange = { /* TODO populate this field */ },
+            onValueChange = onLogInputChanged,
             label = {
                 Text("Log prefix")
             },
@@ -75,7 +82,7 @@ fun PedroSettingsScreen(
         )
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
         OutlinedTextField(
-            value = "",
+            value = timeInput,
             singleLine = true,
             shape = shapes.large,
             modifier = Modifier.fillMaxWidth(),
@@ -84,9 +91,9 @@ fun PedroSettingsScreen(
                 unfocusedContainerColor = colorScheme.surface,
                 disabledContainerColor = colorScheme.surface,
             ),
-            onValueChange = { /* TODO populate this field */ },
+            onValueChange = onTimeInputChanged,
             label = {
-                Text("Time Threshold")
+                Text("Time Threshold (seconds)")
             },
             keyboardOptions = KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number,
@@ -95,7 +102,7 @@ fun PedroSettingsScreen(
         )
         Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
         OutlinedTextField(
-            value = "",
+            value = distanceInput,
             singleLine = true,
             shape = shapes.large,
             modifier = Modifier.fillMaxWidth(),
@@ -104,9 +111,9 @@ fun PedroSettingsScreen(
                 unfocusedContainerColor = colorScheme.surface,
                 disabledContainerColor = colorScheme.surface,
             ),
-            onValueChange = { /* TODO populate this field */ },
+            onValueChange = onDistanceInputChanged,
             label = {
-                Text("Distance Threshold")
+                Text("Distance Threshold (meters)")
             },
             keyboardOptions =  KeyboardOptions.Default.copy(
                 keyboardType = KeyboardType.Number,
@@ -120,5 +127,12 @@ fun PedroSettingsScreen(
 @Preview(showBackground = true)
 @Composable
 fun PedroSettingsScreenPreview() {
-    PedroSettingsScreen()
+    PedroSettingsScreen(
+        timeInput = "",
+        distanceInput = "",
+        onDistanceInputChanged = {},
+        onTimeInputChanged = {},
+        logInput = "",
+        onLogInputChanged = {}
+    )
 }

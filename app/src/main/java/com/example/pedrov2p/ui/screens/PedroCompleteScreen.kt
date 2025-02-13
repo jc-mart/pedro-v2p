@@ -17,8 +17,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.pedrov2p.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+// TODO Make it a scrollable list of results
 
-@SuppressLint("DefaultLocale")
+@SuppressLint("DefaultLocale", "StateFlowValueCalledInComposition")
 @Composable
 fun PedroCompleteScreen(
     viewModel: PedroViewModel,
@@ -48,7 +49,7 @@ fun PedroCompleteScreen(
             )
             Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
             Text(
-                text = "Distance Std Dev"
+                text = "Distance Std Dev ${String.format("%.2f", viewModel.uiState.value.distanceStdDev / 1000.0)}m"
             )
             Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
             Text(

@@ -1,5 +1,6 @@
 package com.example.pedrov2p.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun PedroRangingScreen(
     onAbortClicked: () -> Unit,
