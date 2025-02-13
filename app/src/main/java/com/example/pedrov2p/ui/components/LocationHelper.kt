@@ -111,7 +111,10 @@ class LocationHelper(context: Context) {
 
                 override fun onLocationResult(p0: LocationResult) {
                     location = p0.lastLocation
-                    continuation.resume(true)
+                    if (!available) {
+                        available = true
+                        continuation.resume(true)
+                    }
                 }
             }
         )

@@ -6,6 +6,9 @@ import android.location.Location
 import android.net.wifi.aware.PeerHandle
 import android.net.wifi.rtt.RangingResult
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +34,7 @@ const val VM_TAG = "PedroViewModel"
 class PedroViewModel(application: Application): AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(PedroUiState())
     val uiState: StateFlow<PedroUiState> = _uiState.asStateFlow()
+    val distance by remember { mutableIntStateOf(0) }
     // This will have to have methods here to update the State, followed by the UI
     private val rttHelper = RttHelper(application.applicationContext)
     private val locationHelper = LocationHelper(application.applicationContext)
@@ -38,7 +42,9 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     /**
     init {
         _uiState.update { state ->
-            state.copy(
+
+   ]
+    state.copy(
                 rttHelper = RttHelper(application.applicationContext),
                 locationHelper = LocationHelper(application.applicationContext)
             )
@@ -135,7 +141,7 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
 
 
-    suspend fun startRttRanging(iterations: Int, timeDelay: Long = 0):
+    fun startRttRanging(iterations: Int, timeDelay: Long = 0):
         MutableList<Pair<RangingResult, Location>> {
         val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
 
@@ -155,6 +161,8 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
             repeat(iterations) {
                 val rangingResult = rttHelper.performRtt(rangingConfig, appContext.mainExecutor)
                 val currentLocation = locationHelper.location!!
+
+                Log.d(VM_TAG, "Dist: ${rangingResult.distanceMm} Lat: ${currentLocation.latitude}")
                 rangingResults.add(Pair(rangingResult, currentLocation))
                 delay(timeDelay)
             }
@@ -166,6 +174,8 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
                     distance = rangingResults[0].first.distanceMm
                 )
             }
+
+            Log.d(VM_TAG, "Updated UI? ${_uiState.value.distance}")
         }
 
         return rangingResults

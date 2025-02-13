@@ -140,6 +140,9 @@ fun PedroApp(
                 PedroRangingScreen(
                     onStartRanging = {
 
+                        viewModel.startRttRanging(5)
+
+                        /**
                         coroutineScope.launch {
                             with (Dispatchers.Main) {
                                 rttHelper.startAwareSession()
@@ -155,6 +158,7 @@ fun PedroApp(
                                 navController.navigate(PedroScreen.Complete.name)
                             }
                         }
+                        **/
                     },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
