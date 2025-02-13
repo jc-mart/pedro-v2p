@@ -140,7 +140,11 @@ fun PedroApp(
                 PedroRangingScreen(
                     onStartRanging = {
 
-                        viewModel.startRttRanging(5)
+                        coroutineScope.launch {
+                            viewModel.startRttRanging(5)
+                            navController.navigate(PedroScreen.Complete.name)
+
+                        }
 
                         /**
                         coroutineScope.launch {
@@ -155,10 +159,10 @@ fun PedroApp(
                                 rttHelper.stopRanging()
 
                                 // TODO after retrieving results, goto stats screen
-                                navController.navigate(PedroScreen.Complete.name)
                             }
                         }
                         **/
+
                     },
                     onAbortClicked = {
                         // TODO handle APIs when aborting
@@ -172,6 +176,7 @@ fun PedroApp(
             }
             composable(route = PedroScreen.Complete.name) {
                 PedroCompleteScreen(
+                    viewModel
                 )
             }
             composable(route = PedroScreen.Standby.name) {

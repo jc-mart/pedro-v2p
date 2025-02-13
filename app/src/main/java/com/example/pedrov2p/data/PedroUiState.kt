@@ -23,7 +23,7 @@ data class PedroUiState(
      * Ints will be for updating screen
      */
     val distanceArray: Array<Int> = Array(maxIterations) { -1 },
-    val distance: Int = -1,
+    var distance: Int = -1,
     val distanceStdDevArray:Array<Int> = Array(maxIterations) { -1 },
     val distanceStdDev: Int = -1,
     val rssiArray: Array<Int> = Array(maxIterations) { -1 },

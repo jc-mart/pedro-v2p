@@ -21,7 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @SuppressLint("DefaultLocale")
 @Composable
 fun PedroCompleteScreen(
-    viewModel: PedroViewModel = viewModel(),
+    viewModel: PedroViewModel,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -44,7 +44,7 @@ fun PedroCompleteScreen(
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "Distance"
+                text = "Distance ${String.format("%.2f", viewModel.getDistance() / 1000.0)}m"
             )
             Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
             Text(

@@ -28,13 +28,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 const val VM_TAG = "PedroViewModel"
 
 class PedroViewModel(application: Application): AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(PedroUiState())
     val uiState: StateFlow<PedroUiState> = _uiState.asStateFlow()
-    val distance by remember { mutableIntStateOf(0) }
     // This will have to have methods here to update the State, followed by the UI
     private val rttHelper = RttHelper(application.applicationContext)
     private val locationHelper = LocationHelper(application.applicationContext)
@@ -141,8 +143,8 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
 
 
-    fun startRttRanging(iterations: Int, timeDelay: Long = 0):
-        MutableList<Pair<RangingResult, Location>> {
+    suspend fun startRttRanging(iterations: Int, timeDelay: Long = 0):
+        MutableList<Pair<RangingResult, Location>> = suspendCoroutine { continuation ->
         val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
 
         viewModelScope.launch(Dispatchers.IO) {
@@ -169,16 +171,18 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
             rttHelper.stopSession(awareSession)
 
-            _uiState.update { state ->
-                state.copy(
-                    distance = rangingResults[0].first.distanceMm
-                )
-            }
+            _uiState.value.distance = rangingResults[0].first.distanceMm
 
             Log.d(VM_TAG, "Updated UI? ${_uiState.value.distance}")
+
+            continuation.resume(rangingResults)
         }
 
-        return rangingResults
+        // return rangingResults
+    }
+
+    fun getDistance(): Int {
+        return _uiState.value.distance
     }
 
 
