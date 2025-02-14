@@ -15,7 +15,7 @@ data class PedroUiState(
     var timeThreshold: Int = 3 * 1000,
     // Getting granular with MM
     var distanceThreshold: Int = 2 * 1000,
-    var maxIterations: Int = 5,
+    var maxIterations: String = "5",
     var enableLogging: Boolean = true,
     /**
      * Values retrieved from Wi-Fi RTT

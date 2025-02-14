@@ -1,28 +1,21 @@
 package com.example.pedrov2p.ui.screens
 
 import android.app.Application
-import android.content.Context
 import android.location.Location
-import android.net.wifi.aware.PeerHandle
+import android.net.wifi.aware.WifiAwareSession
 import android.net.wifi.rtt.RangingResult
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pedrov2p.data.PedroUiState
-import com.example.pedrov2p.ui.components.AwareHelper
 import com.example.pedrov2p.ui.components.LocationHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import com.example.pedrov2p.ui.components.SERVICE_NAME
-import com.example.pedrov2p.ui.repositories.AwareRepository
-import com.example.pedrov2p.ui.repositories.RTTRepository
-import com.example.pedrov2p.ui.repositories.WifiAwareSessionStatus
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +36,9 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     private val rttHelper = RttHelper(application.applicationContext)
     private val locationHelper = LocationHelper(application.applicationContext)
     private val appContext = application
+    private var wifiAwareSession: WifiAwareSession? = null
+    private var fusedLocationProviderClient: FusedLocationProviderClient? = null
+    private var locationCallback: LocationCallback? = null
 
     var timeInput by mutableStateOf("13")
         private set
@@ -50,6 +46,14 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         private set
     var logPrefix by mutableStateOf("rtt_")
         private set
+    var maxIterations by mutableStateOf("5")
+        private set
+    var iterationDelay by mutableStateOf("0.0")
+        private set
+
+    fun updateIterationDelay(input: String) {
+        iterationDelay = input
+    }
 
     fun updateLogPrefix(input: String) {
         logPrefix = input
@@ -61,6 +65,14 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
     fun updateDistanceThreshold(input: String) {
         distanceInput = input
+    }
+
+    fun updateIterations(input: String) {
+        maxIterations = input
+    }
+
+    fun isLocationUp(): Boolean {
+        return fusedLocationProviderClient != null
     }
 
     /**
@@ -75,10 +87,10 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     fun verifyRun(): Boolean {
         var verified = false
 
-        for (i in 0..uiState.value.maxIterations) {
+        for (i in 0..uiState.value.maxIterations.toInt()) {
             var j = i + 1
 
-            for (j in i..uiState.value.maxIterations) {
+            for (j in i..uiState.value.maxIterations.toInt()) {
                 if (true)
                     TODO()
             }
@@ -87,54 +99,50 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         return verified
     }
 
-    fun updateIntermediateResult(result: Pair<RangingResult, Location>) {
-        Log.d("VM", "updating intermediate values. sample: ${result.first.distanceMm}")
-        _uiState.update { currentState ->
-            currentState.copy(
-                distance = result.first.distanceMm,
-                distanceStdDev = result.first.distanceStdDevMm,
-                rssi = result.first.rssi,
-                successfulMeasurements = result.first.numSuccessfulMeasurements,
-                attemptedMeasurements = result.first.numAttemptedMeasurements,
-                latitude = result.second.latitude,
-                longitude = result.second.longitude
-            )
-        }
-        Log.d("VM", "Address of _ui: ${System.identityHashCode(_uiState)}, ui: ${System.identityHashCode(uiState)}")
-        Log.d("VM", "updated? ${_uiState.value.distance}")
-    }
-
-    fun updateFinalizedResults(finalResults: MutableList<Pair<RangingResult, Location>>) {
-        TODO("Average out the values? and give a scrollable list of total passes")
-
-    }
-
     fun resetForRerun() {
         TODO("Not yet implemented")
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        Log.d(VM_TAG, "Cleared")
+    fun logToFile() {
+        TODO("Not yet implemented")
     }
 
+    private suspend fun startLocationServices(): Pair<FusedLocationProviderClient, LocationCallback> = suspendCancellableCoroutine { continuation ->
 
+        viewModelScope.launch {
+            val locationClient = locationHelper.getLocationClient()
+            val locationRequest = locationHelper.buildLocationRequest()
+            val callback: LocationCallback = locationHelper.startUpdates(
+                locationClient,
+                locationRequest,
+                appContext.mainExecutor
+            )
 
-    suspend fun startRttRanging(iterations: Int, timeDelay: Long = 0):
-        MutableList<Pair<RangingResult, Location>> = suspendCoroutine { continuation ->
+            fusedLocationProviderClient = locationClient
+            locationCallback = callback
+
+            continuation.resume(Pair(locationClient, callback))
+        }
+    }
+
+    suspend fun startRttRanging(
+        iterations: Int = maxIterations.toInt(),
+        timeDelay: Long = (iterationDelay.toFloat() * 1000).toLong()
+    ):
+        MutableList<Pair<RangingResult, Location>> = suspendCancellableCoroutine { continuation ->
         val rangingResults = mutableListOf<Pair<RangingResult, Location>>()
         updateTimeThreshold(timeInput)
         updateDistanceThreshold(distanceInput)
 
         viewModelScope.launch(Dispatchers.IO) {
-            val locationClient = locationHelper.getLocationClient()
-            val locationRequest = locationHelper.buildLocationRequest()
-            val ready = locationHelper.startUpdates(
-                locationClient,
-                locationRequest,
-                appContext.mainExecutor
-            )
+            val locationClientCallback = startLocationServices()
+
+            while (locationHelper.location == null) {
+                delay(1000) // Wait for Location Services to come online
+            }
+
             val awareSession = rttHelper.startSession()
+            wifiAwareSession = awareSession
             val subscribeConfig = rttHelper.buildSubscribeConfig(SERVICE_NAME)
             val peerHandle = rttHelper.discoverPeer(awareSession, subscribeConfig)
             val rangingConfig = rttHelper.buildRangingConfig(peerHandle)
@@ -150,18 +158,30 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
             }
 
             rttHelper.stopSession(awareSession)
+            // TODO Get the callback to stop receiving updates
+            locationHelper.stopUpdates(locationClientCallback.first, locationClientCallback.second)
             _uiState.value.distanceStdDev = rangingResults[0].first.distanceStdDevMm
             // This updates the distance
             _uiState.value.distance = rangingResults[0].first.distanceMm
             updateResults(rangingResults)
             Log.d(VM_TAG, "Ranging Results: ${_uiState.value.distanceArray}")
-            Log.d(VM_TAG, "State: ${_uiState}")
-            Log.d(VM_TAG, "Updated UI? ${_uiState.value.distance} RSSI: ${_uiState.value.rssi}")
 
             continuation.resume(rangingResults)
         }
 
+        continuation.invokeOnCancellation {
+            rttHelper.stopRanging(wifiAwareSession)
+            locationHelper.stopUpdates(fusedLocationProviderClient, locationCallback)
+        }
         // return rangingResults
+    }
+
+    fun stopRanging() {
+        rttHelper.stopRanging(wifiAwareSession)
+        locationHelper.stopUpdates(fusedLocationProviderClient, locationCallback)
+        locationHelper.resetLocation()
+
+        Log.d(VM_TAG, "Aware session and child operations closed")
     }
 
     private fun updateResults(rangingResults: MutableList<Pair<RangingResult, Location>>) {

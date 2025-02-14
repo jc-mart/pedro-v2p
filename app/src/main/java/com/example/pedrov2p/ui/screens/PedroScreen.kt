@@ -100,10 +100,7 @@ fun PedroApp(
     )
     val currentContext = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val rttHelper = RttHelper(currentContext)
     val awareHelper = AwareHelper(currentContext)
-    var results: MutableList<Pair<RangingResult, Location>>
-    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold (
         topBar = {
@@ -115,7 +112,6 @@ fun PedroApp(
             )
         }
     ) { innerPadding ->
-
         NavHost(
             navController = navController,
             startDestination = PedroScreen.Start.name,
@@ -135,6 +131,10 @@ fun PedroApp(
                         // TODO modify viewModel if needed
                         navController.navigate(PedroScreen.Standby.name)
                     },
+                    iterationsInput = viewModel.maxIterations,
+                    onIterationsChanged = { viewModel.updateIterations(it) },
+                    iterationDelayInput = viewModel.iterationDelay,
+                    onIterationDelayChanged = { viewModel.updateIterationDelay(it) },
                     modifier = Modifier
                 )
             }
@@ -144,7 +144,7 @@ fun PedroApp(
                 PedroRangingScreen(
                     onStartRanging = {
                         coroutineScope.launch {
-                            viewModel.startRttRanging(5)
+                            viewModel.startRttRanging()
                             navController.navigate(PedroScreen.Complete.name)
 
                         }
@@ -152,16 +152,18 @@ fun PedroApp(
                     onAbortClicked = {
                         // TODO handle APIs when aborting
                         // TODO snackbar confirming aborting on back button
-                        rttHelper.stopRanging()
+                        viewModel.stopRanging()
                         navController.navigate(PedroScreen.Start.name)
                     },
-                    onStopRanging = {rttHelper.stopRanging()},
+                    onStopRanging = {viewModel.stopRanging()},
                     modifier = Modifier
                 )
             }
             composable(route = PedroScreen.Complete.name) {
                 PedroCompleteScreen(
-                    viewModel
+                    viewModel,
+                    onClickHome = { navController.navigate(PedroScreen.Start.name) },
+                    onClickSaveLog = {}
                 )
             }
             composable(route = PedroScreen.Standby.name) {
@@ -189,7 +191,11 @@ fun PedroApp(
                     logInput = viewModel.logPrefix,
                     onTimeInputChanged = { viewModel.updateTimeThreshold(it) },
                     onDistanceInputChanged = { viewModel.updateDistanceThreshold(it) },
-                    onLogInputChanged = { viewModel.updateLogPrefix(it) }
+                    onLogInputChanged = { viewModel.updateLogPrefix(it) },
+                    iterationsInput = viewModel.maxIterations,
+                    onIterationsChanged = { viewModel.updateIterations(it) },
+                    iterationDelayInput = viewModel.iterationDelay,
+                    onIterationDelayChanged = { viewModel.updateIterationDelay(it) }
                 )
             }
         }

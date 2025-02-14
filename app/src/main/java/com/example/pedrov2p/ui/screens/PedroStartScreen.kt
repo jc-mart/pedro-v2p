@@ -34,6 +34,10 @@ fun PedroStartScreen(
     onDistanceInputChanged: (String) -> Unit,
     onClickRangeRequest: () -> Unit = {},
     onClickStandbyMode: () -> Unit = {},
+    iterationsInput: String,
+    onIterationsChanged: (String) -> Unit,
+    iterationDelayInput: String,
+    onIterationDelayChanged: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -101,6 +105,46 @@ fun PedroStartScreen(
                 )
             )
             Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+            OutlinedTextField(
+                value = iterationsInput,
+                singleLine = true,
+                shape = shapes.large,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface,
+                    disabledContainerColor = colorScheme.surface,
+                ),
+                onValueChange = onIterationsChanged,
+                label = {
+                    Text("Iterations")
+                },
+                keyboardOptions =  KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                )
+            )
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+            OutlinedTextField(
+                value = iterationDelayInput,
+                singleLine = true,
+                shape = shapes.large,
+                modifier = Modifier.fillMaxWidth(),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface,
+                    disabledContainerColor = colorScheme.surface,
+                ),
+                onValueChange = onIterationDelayChanged,
+                label = {
+                    Text("Iteration Delay (seconds)")
+                },
+                keyboardOptions =  KeyboardOptions.Default.copy(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                )
+            )
+            Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
         }
         Row(
             modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
@@ -131,6 +175,10 @@ fun PedroStartScreenPreview() {
         timeInput = "",
         distanceInput = "",
         onTimeInputChanged = {},
-        onDistanceInputChanged = {}
+        onDistanceInputChanged = {},
+        iterationsInput = "",
+        onIterationsChanged = {},
+        iterationDelayInput = "",
+        onIterationDelayChanged = {}
     )
 }

@@ -23,6 +23,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun PedroCompleteScreen(
     viewModel: PedroViewModel,
+    onClickHome: () -> Unit,
+    onClickSaveLog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -68,15 +70,15 @@ fun PedroCompleteScreen(
             modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
         ) {
             Button(
-                onClick = { /* TODO Implement logic */ },
+                onClick = onClickHome,
             ) {
                 Text(
-                    text = "Rerun"
+                    text = "Home"
                 )
             }
             Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
             Button(
-                onClick = { /* TODO Implement logic */ },
+                onClick = onClickSaveLog,
             ) {
                 Text(
                     text = "Save log"
@@ -89,5 +91,5 @@ fun PedroCompleteScreen(
 @Preview(showBackground = true)
 @Composable
 fun PedroCompleteScreenPreview() {
-    // PedroCompleteScreen()
+    // =PedroCompleteScreen()
 }

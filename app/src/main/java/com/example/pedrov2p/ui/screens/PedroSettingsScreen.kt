@@ -35,6 +35,10 @@ fun PedroSettingsScreen(
     onDistanceInputChanged: (String) -> Unit,
     logInput: String,
     onLogInputChanged: (String) -> Unit,
+    iterationsInput: String,
+    onIterationsChanged: (String) -> Unit,
+    iterationDelayInput: String,
+    onIterationDelayChanged: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -120,7 +124,46 @@ fun PedroSettingsScreen(
                 imeAction = ImeAction.Done
             )
         )
-
+        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+        OutlinedTextField(
+            value = iterationsInput,
+            singleLine = true,
+            shape = shapes.large,
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
+                disabledContainerColor = colorScheme.surface,
+            ),
+            onValueChange = onIterationsChanged,
+            label = {
+                Text("RTT Iterations")
+            },
+            keyboardOptions =  KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            )
+        )
+        Spacer(modifier = Modifier.height(dimensionResource(R.dimen.padding_medium)))
+        OutlinedTextField(
+            value = iterationDelayInput,
+            singleLine = true,
+            shape = shapes.large,
+            modifier = Modifier.fillMaxWidth(),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
+                disabledContainerColor = colorScheme.surface,
+            ),
+            onValueChange = onIterationDelayChanged,
+            label = {
+                Text("Iteration Delay (seconds)")
+            },
+            keyboardOptions =  KeyboardOptions.Default.copy(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+            )
+        )
     }
 }
 
@@ -133,6 +176,10 @@ fun PedroSettingsScreenPreview() {
         onDistanceInputChanged = {},
         onTimeInputChanged = {},
         logInput = "",
-        onLogInputChanged = {}
+        onLogInputChanged = {},
+        iterationsInput = "",
+        onIterationsChanged = {},
+        iterationDelayInput = "",
+        onIterationDelayChanged = {}
     )
 }

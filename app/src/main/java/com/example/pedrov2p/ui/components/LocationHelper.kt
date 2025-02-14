@@ -97,27 +97,31 @@ class LocationHelper(context: Context) {
         locationProviderClient: FusedLocationProviderClient,
         locationRequest: LocationRequest,
         executor: Executor,
-    ): Boolean = suspendCancellableCoroutine { continuation ->
+    ): LocationCallback = suspendCancellableCoroutine { continuation ->
+        val callback = object : LocationCallback() {
+            override fun onLocationAvailability(p0: LocationAvailability) {
+                Log.d(
+                    LOCATION_TAG,
+                    "Location ${if (p0.isLocationAvailable) "" else "un"}available"
+                )
+            }
+
+            override fun onLocationResult(p0: LocationResult) {
+                location = p0.lastLocation
+                if (!available) {
+                    available = true
+                    // continuation.resume(true)
+                }
+            }
+        }
+
         locationProviderClient.requestLocationUpdates(
             locationRequest,
             executor,
-            object : LocationCallback() {
-                override fun onLocationAvailability(p0: LocationAvailability) {
-                    Log.d(
-                        LOCATION_TAG,
-                        "Location ${if (p0.isLocationAvailable) "" else "un"}available"
-                    )
-                }
-
-                override fun onLocationResult(p0: LocationResult) {
-                    location = p0.lastLocation
-                    if (!available) {
-                        available = true
-                        continuation.resume(true)
-                    }
-                }
-            }
+            callback
         )
+
+        continuation.resume(callback)
     }
 
     fun getLocationClient(): FusedLocationProviderClient {
@@ -125,11 +129,15 @@ class LocationHelper(context: Context) {
     }
 
     fun stopUpdates(
-        locationProviderClient: FusedLocationProviderClient,
-        locationCallback: LocationCallback
+        locationProviderClient: FusedLocationProviderClient?,
+        locationCallback: LocationCallback?
     ) {
-        locationProviderClient.removeLocationUpdates(locationCallback)
+        locationProviderClient?.removeLocationUpdates(locationCallback as LocationCallback)
 
         Log.d(LOCATION_TAG, "Stopped receiving location updates")
+    }
+
+    fun resetLocation() {
+        location = null
     }
 }
