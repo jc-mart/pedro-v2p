@@ -1,9 +1,13 @@
 package com.example.pedrov2p.ui.screens
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
 import android.location.Location
+import android.net.Uri
 import android.net.wifi.aware.WifiAwareSession
 import android.net.wifi.rtt.RangingResult
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +28,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -214,5 +220,36 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
     fun getDistanceStdDev(): Int {
         return _uiState.value.distanceStdDev
+    }
+
+    fun logResults(uiState: PedroUiState) {
+        val currentTime = LocalDateTime.now()
+        val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy-HH_mm_ss")
+        val formattedTime = currentTime.format(formatter)
+
+        appContext.openFileOutput(
+            "/Documents/$logPrefix$formattedTime.csv",
+            Context.MODE_PRIVATE
+        ).use {
+            // TODO write a header to describe the fields
+            it.write(("distance, distance std dev, rssi, attempted measurements, " +
+                    "successful measurements, timestamp, location, 80211mc measurements, " +
+                    "time threshold, distance threshold, max iterations, pedro verified").toByteArray())
+            for (i in 0 .. maxIterations.toInt()) {
+                it.write(("${uiState.distanceArray[i]}, " +
+                        "${uiState.distanceStdDevArray[i]}, " +
+                        "${uiState.rssiArray[i]}, " +
+                        "${uiState.attemptedMeasurementsArray[i]}, " +
+                        "${uiState.successfulMeasurementsArray[i]}, " +
+                        "${uiState.timestampArray[i]}, " +
+                        "${uiState.locations[i]}").toByteArray())
+            }
+
+            it.write(("${uiState.is80211mcMeasurement}, " +
+                    "${uiState.timeThreshold}, " +
+                    "${uiState.distanceThreshold}, " +
+                    "${uiState.maxIterations}, " +
+                    "${uiState.pedroVerified}\n").toByteArray())
+        }
     }
 }
