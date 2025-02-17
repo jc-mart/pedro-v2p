@@ -11,7 +11,7 @@ const val R = 6371e3 // Earth's radius in meters
 const val GPS_ERROR = 1.2 // Derived from PEDRO paper
 const val RTT_ERROR = 1.87 // Derived from PEDRO paper
 
-class PedroHelper {
+open class PedroHelper {
     fun haversineDistance(lat1: Double, long1: Double, lat2: Double, long2: Double): Double {
         val dLat = Math.toRadians(lat2 - lat1)
         val dLong = Math.toRadians(long2 - long1)
@@ -46,6 +46,34 @@ class PedroHelper {
         val timeDifference =
             (point2.first.rangingTimestampMillis - point1.first.rangingTimestampMillis) / 1000.0
         val result = minDistance > distanceThreshold && timeDifference < timeThreshold
+
+        return result
+    }
+
+    fun verifyRun(
+        results: MutableList<Pair<RangingResult, Location>>,
+        distanceThreshold: Float,
+        timeThreshold: Float
+    ): Pair<Int, Int> {
+        var result = Pair(-1, -1)
+
+        if (results.size > 2) {
+            val candidate = results.last()
+
+            for (i in 0 ..< results.size - 2) {
+                val movement = movementDetected(
+                    results[i],
+                    candidate,
+                    distanceThreshold,
+                    timeThreshold
+                )
+
+                if (movement) {
+                    result = Pair(i + 1, results.size)
+                    break
+                }
+            }
+        }
 
         return result
     }

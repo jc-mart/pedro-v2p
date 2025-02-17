@@ -12,6 +12,7 @@ data class PedroUiState(
 
     // PEDRO specific
     var pedroVerified: Boolean = false,
+    var verifiedPairs: Pair<Int, Int> = Pair(-1, -1),
     var timeThreshold: Int = 3 * 1000,
     // Getting granular with MM
     var distanceThreshold: Int = 2 * 1000,

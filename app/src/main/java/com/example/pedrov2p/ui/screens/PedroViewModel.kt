@@ -14,6 +14,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pedrov2p.data.PedroUiState
 import com.example.pedrov2p.ui.components.LocationHelper
+import com.example.pedrov2p.ui.components.PedroHelper
 import com.example.pedrov2p.ui.components.RttHelper
 import com.example.pedrov2p.ui.components.SERVICE_NAME
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -78,36 +79,16 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
         return fusedLocationProviderClient != null
     }
 
-    /**
-     * TODO make sure to take timestamps of when the rtt request is done
-     *
-     * Iterate through all range results to find if something meets both
-     * the time and distance threshold
-     *
-     * begin with i = 1
-     * and j starts at i to avoid repeating sequences
-     */
-    fun verifyRun(): Boolean {
-        var verified = false
-
-        for (i in 0..uiState.value.maxIterations.toInt()) {
-            var j = i + 1
-
-            for (j in i..uiState.value.maxIterations.toInt()) {
-                if (true)
-                    TODO()
-            }
-        }
-
-        return verified
-    }
-
     fun resetForRerun() {
         TODO("Not yet implemented")
     }
 
-    fun logToFile() {
-        TODO("Not yet implemented")
+    fun getVerified(): Boolean {
+        return _uiState.value.pedroVerified
+    }
+
+    fun getVerifiedPairs(): Pair<Int, Int> {
+        return _uiState.value.verifiedPairs
     }
 
     private suspend fun startLocationServices(): Pair<FusedLocationProviderClient, LocationCallback> = suspendCancellableCoroutine { continuation ->
@@ -156,16 +137,22 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
 
                 Log.d(VM_TAG, "Dist: ${rangingResult.distanceMm} Lat: ${currentLocation.latitude}")
                 rangingResults.add(Pair(rangingResult, currentLocation))
-                _uiState.value.distance = rangingResult.distanceMm
+                val verified = PedroHelper().verifyRun(
+                    rangingResults,
+                    distanceInput.toFloat(),
+                    timeInput.toFloat()
+                )
+                if (verified != Pair(-1, -1) && !_uiState.value.pedroVerified) {
+                    _uiState.value.pedroVerified = true
+                    _uiState.value.verifiedPairs = verified
+                }
+
                 delay(timeDelay)
             }
 
             rttHelper.stopSession(awareSession)
             // TODO Get the callback to stop receiving updates
             locationHelper.stopUpdates(locationClientCallback.first, locationClientCallback.second)
-            _uiState.value.distanceStdDev = rangingResults[0].first.distanceStdDevMm
-            // This updates the distance
-            _uiState.value.distance = rangingResults[0].first.distanceMm
             updateResults(rangingResults)
             Log.d(VM_TAG, "Ranging Results: ${_uiState.value.distanceArray}")
 
@@ -241,23 +228,26 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
                 val writer = OutputStreamWriter(outputStream)
 
                 writer.append(
-                        "distance (mm), " +
-                        "distance std dev (mm), " +
-                        "rssi, " +
-                        "attempted measurements, " +
-                        "successful measurements, " +
-                        "timestamp (ms), " +
-                        "location, " +
-                        "80211mc measurements, " +
-                        "time threshold (ms), " +
-                        "distance threshold (mm), " +
-                        "max iterations, " +
-                        "iteration delay (ms), " +
-                        "pedro verified\n"
-                        )
+                    "iteration, " +
+                    "distance (mm), " +
+                    "distance std dev (mm), " +
+                    "rssi, " +
+                    "attempted measurements, " +
+                    "successful measurements, " +
+                    "timestamp (ms), " +
+                    "location, " +
+                    "80211mc measurements, " +
+                    "time threshold (ms), " +
+                    "distance threshold (mm), " +
+                    "max iterations, " +
+                    "iteration delay (ms), " +
+                    "pedro verified, " +
+                    "verified pairs\n"
+                    )
 
                 for (i in 0 ..< maxIterations.toInt()) {
                     writer.append(
+                        "${i + 1}, " +
                         "${_uiState.value.distanceArray[i]}, " +
                         "${_uiState.value.distanceStdDevArray[i]}, " +
                         "${_uiState.value.rssiArray[i]}, " +
@@ -270,7 +260,8 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
                         "${(distanceInput.toFloat() * 1000).toInt()}, " +
                         "${maxIterations}, " +
                         "${(iterationDelay.toFloat() * 1000).toInt()}, "        +
-                        "${_uiState.value.pedroVerified}\n"
+                        "${_uiState.value.pedroVerified}, " +
+                        "${_uiState.value.verifiedPairs}\n"
                     )
                 }
 

@@ -65,6 +65,10 @@ fun PedroCompleteScreen(
             Text(
                 text = "Attempted Measurements"
             )
+            Spacer(modifier = Modifier.padding(dimensionResource(R.dimen.padding_small)))
+            Text(
+                text = "Verified? ${viewModel.getVerified()} -> ${viewModel.getVerifiedPairs()}"
+            )
         }
         Row(
             modifier = Modifier.padding(bottom = dimensionResource(R.dimen.padding_medium))
