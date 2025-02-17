@@ -2,13 +2,9 @@ package com.example.pedrov2p.ui.screens
 
 import android.app.Application
 import android.content.ContentValues
-import android.content.Context
-import android.content.Intent
 import android.location.Location
-import android.net.Uri
 import android.net.wifi.aware.WifiAwareSession
 import android.net.wifi.rtt.RangingResult
-import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.runtime.getValue
@@ -27,14 +23,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.io.OutputStreamWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 const val VM_TAG = "PedroViewModel"
 
@@ -226,48 +220,6 @@ class PedroViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun logResults() {
-        val currentTime = LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy-HH_mm_ss")
-        val formattedTime = currentTime.format(formatter)
-
-        appContext.openFileOutput(
-            "$logPrefix$formattedTime.csv",
-            Context.MODE_PRIVATE
-        ).use {
-            // TODO write a header to describe the fields
-            it.write((
-                    "distance, " +
-                    "distance std dev, " +
-                    "rssi, " +
-                    "attempted measurements, " +
-                    "successful measurements, " +
-                    "timestamp, " +
-                    "location, " +
-                    "80211mc measurements, " +
-                    "time threshold, " +
-                    "distance threshold, " +
-                    "max iterations, " +
-                    "pedro verified"
-                    ).toByteArray())
-            for (i in 0..< maxIterations.toInt()) {
-                it.write(("${_uiState.value.distanceArray[i]}, " +
-                        "${_uiState.value.distanceStdDevArray[i]}, " +
-                        "${_uiState.value.rssiArray[i]}, " +
-                        "${_uiState.value.attemptedMeasurementsArray[i]}, " +
-                        "${_uiState.value.successfulMeasurementsArray[i]}, " +
-                        "${_uiState.value.timestampArray[i]}, " +
-                        "${_uiState.value.locations[i]}").toByteArray())
-            }
-
-            it.write(("${_uiState.value.is80211mcMeasurement}, " +
-                    "${_uiState.value.timeThreshold}, " +
-                    "${_uiState.value.distanceThreshold}, " +
-                    "${_uiState.value.maxIterations}, " +
-                    "${_uiState.value.pedroVerified}\n").toByteArray())
-        }
-    }
-
-    fun newLogResults() {
         val currentTime = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy-HH_mm_ss")
         val formattedTime = currentTime.format(formatter)

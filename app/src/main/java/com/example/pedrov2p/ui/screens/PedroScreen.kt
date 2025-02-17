@@ -1,10 +1,6 @@
 package com.example.pedrov2p.ui.screens
 
 
-import android.annotation.SuppressLint
-import android.location.Location
-import android.net.wifi.rtt.RangingResult
-import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -19,7 +15,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -33,12 +28,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.pedrov2p.R
 import com.example.pedrov2p.ui.components.AwareHelper
-import com.example.pedrov2p.ui.components.RttHelper
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 enum class PedroScreen(@StringRes val title: Int) {
     Start(title = R.string.app_name),
@@ -163,7 +154,7 @@ fun PedroApp(
                 PedroCompleteScreen(
                     viewModel,
                     onClickHome = { navController.navigate(PedroScreen.Start.name) },
-                    onClickSaveLog = { viewModel.newLogResults() }
+                    onClickSaveLog = { viewModel.logResults() }
                 )
             }
             composable(route = PedroScreen.Standby.name) {
