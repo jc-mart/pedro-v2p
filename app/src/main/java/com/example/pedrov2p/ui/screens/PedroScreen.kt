@@ -163,7 +163,7 @@ fun PedroApp(
                 PedroCompleteScreen(
                     viewModel,
                     onClickHome = { navController.navigate(PedroScreen.Start.name) },
-                    onClickSaveLog = {}
+                    onClickSaveLog = { viewModel.newLogResults() }
                 )
             }
             composable(route = PedroScreen.Standby.name) {
